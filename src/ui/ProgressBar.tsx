@@ -25,7 +25,7 @@ export function ProgressBar({ value, max = 100, label, tone = 'mint', showValue 
         <div className={`h-full border-r-2 border-ink ${TONE_BG[tone]}`} style={{ width: `${pct}%` }} />
       </div>
       {showValue && (
-        <span className="font-pixel text-xs tabular-nums">
+        <span className="min-w-12 text-right font-pixel text-xs tabular-nums">
           {value}/{max}
         </span>
       )}

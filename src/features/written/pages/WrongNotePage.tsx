@@ -15,7 +15,7 @@ const fmt = (t: number) => new Date(t).toLocaleDateString('ko-KR', { month: 'lon
 export default function WrongNotePage() {
   const navigate = useNavigate()
   const wrong = useStore((s) => s.wrong)
-  const retry = useStore((s) => s.retry)
+  const stored = useStore((s) => s.retry)
   const history = useStore((s) => s.retryHistory)
   const startRetry = useStore((s) => s.startRetry)
   const [tab, setTab] = useState<Tab>('active')
@@ -33,9 +33,11 @@ export default function WrongNotePage() {
     .filter((x) => (!unitId || x.q.unitId === unitId) && (!type || x.q.type === type))
     .sort((a, b) => (sort === 'count' ? b.w.wrongCount - a.w.wrongCount || b.w.lastWrongAt - a.w.lastWrongAt : b.w.lastWrongAt - a.w.lastWrongAt))
 
+  // 데이터에서 문항이 사라져 풀 것이 없는 사이클은 없는 것으로 본다 (startRetry 가 새로 만든다)
+  const retry = stored?.queue.some((id) => questionById[id]) ? { ...stored, queue: stored.queue.filter((id) => questionById[id]) } : null
   const remain = retry ? retry.queue.length : activeN
   const start = () => {
-    const c = startRetry()
+    const c = startRetry((id) => !!questionById[id])
     if (c) navigate(`/written/quiz/retry/r${c.round}`)
   }
 

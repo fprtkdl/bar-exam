@@ -6,7 +6,7 @@ import { ArtSvg, INK, LINE, THIN } from './svg'
  * 가니쉬 그림. 좌표 원점 = 잔에 붙는 지점.
  * rim: 원점이 잔 오른쪽 테두리(조각이 테두리에 걸침) / pick: 칵테일 픽이 테두리에서 잔 안으로 / surface: 액면 위에 뿌림
  */
-export type GarnishMount = 'rim' | 'pick' | 'surface'
+type GarnishMount = 'rim' | 'pick' | 'surface'
 
 const C = {
   lemon: '#ffe35a',

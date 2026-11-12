@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../../../lib/store'
 import type { AttemptKind } from '../../../types/storage'
@@ -15,6 +15,7 @@ export function PracticeQuiz({ kind, refId, quiz, back }: Props) {
   const recordAttempt = useStore((s) => s.recordAttempt)
   const [startedAt] = useState(Date.now)
   const [idx, setIdx] = useState(0)
+  const done = useRef(false)
   const [picks, setPicks] = useState<(ChoiceIndex | null)[]>(() => quiz.questions.map(() => null))
 
   const q = quiz.questions[idx]
@@ -27,10 +28,11 @@ export function PracticeQuiz({ kind, refId, quiz, back }: Props) {
   }
 
   const finish = () => {
-    const ref = kind === 'retry' ? `r${useStore.getState().retry?.round ?? 1}` : refId
+    if (done.current) return // 빠른 연타로 두 번 저장되지 않게
+    done.current = true
     const attempt = recordAttempt({
       kind,
-      refId: ref,
+      refId,
       title: quiz.title,
       startedAt,
       answers: quiz.questions.map((qq, i) => ({ qid: qq.id, picked: picks[i], correct: picks[i] === qq.answer })),

@@ -11,3 +11,6 @@ export const examMeta: ExamMeta = {
     'https://www.msu.ac.kr/foodstartup/board/read?boardManagementNo=1582&boardNo=603&menuLevel=2&menuNo=790 (출제기준 HWP 2022.1.1~2024.12.31 게시)',
   ],
 }
+
+/** 원문으로 확인한 출제기준 적용 기간만 (푸터·안내 표시용) */
+export const verifiedPeriod = examMeta.standardPeriod.split(' (')[0]

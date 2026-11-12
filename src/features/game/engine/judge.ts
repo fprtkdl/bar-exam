@@ -179,5 +179,8 @@ export function judge(state: GameState, recipe: Recipe): ScoreSheet {
   }
   allOrNothing('process', '순서·처리', 5, procFaults.map((f) => `순서: ${f}`), '순서·처리: 정답.')
 
+  // 빈 잔(시험 시간 초과 등)은 '해당 없는 항목 만점' 을 주지 않는다
+  if (!g.layers.length)
+    return { total: 0, max: 100, items: items.map((i) => ({ ...i, earned: 0, ok: false, message: i.ok ? `${i.label}: 잔에 음료가 없어 점수가 없습니다.` : i.message })) }
   return { total: items.reduce((s, i) => s + i.earned, 0), max: 100, items }
 }

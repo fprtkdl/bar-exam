@@ -32,7 +32,8 @@ export function applyAttempt(state: PersistedState, attempt: AttemptRecord): Per
 
   let retry = state.retry
   let retryHistory = state.retryHistory
-  if (attempt.kind === 'retry' && retry) {
+  // 이미 끝난 회차를 다른 탭·뒤로 가기로 다시 제출해도 회차가 두 번 넘어가지 않게
+  if (attempt.kind === 'retry' && retry && attempt.refId === `r${retry.round}`) {
     const rounds = [...retry.rounds, { round: retry.round, total: attempt.total, correct: attempt.correct, finishedAt: at }]
     const queue = attempt.answers.filter((a) => !a.correct).map((a) => a.qid)
     if (queue.length === 0) {
@@ -46,11 +47,12 @@ export function applyAttempt(state: PersistedState, attempt: AttemptRecord): Per
   return { ...state, attempts: [...state.attempts, attempt], wrong, retry, retryHistory }
 }
 
-/** 진행 중 사이클이 있으면 그대로, 없으면 미극복 오답 전부로 1회차. 오답 0개면 cycle null */
-export function beginRetry(state: PersistedState, now: number): RetryCycle | null {
-  if (state.retry) return state.retry
+/** 진행 중 사이클이 있으면 그대로, 없으면 미극복 오답 전부로 1회차. 오답 0개면 cycle null.
+ * exists: 데이터에서 사라진 문항을 거른다 (진행 중 사이클에 풀 문항이 하나도 없으면 새로 만든다) */
+export function beginRetry(state: PersistedState, now: number, exists: (qid: string) => boolean = () => true): RetryCycle | null {
+  if (state.retry?.queue.some(exists)) return state.retry
   const queue = Object.values(state.wrong)
-    .filter((w) => !w.cleared)
+    .filter((w) => !w.cleared && exists(w.qid))
     .sort((a, b) => b.lastWrongAt - a.lastWrongAt)
     .map((w) => w.qid)
   return queue.length ? { round: 1, queue, startedAt: now, rounds: [] } : null
@@ -73,11 +75,26 @@ const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object
 export function isPersistedState(v: unknown): v is PersistedState {
   if (!isObj(v) || v.version !== 1) return false
   if (!Array.isArray(v.attempts) || !Array.isArray(v.retryHistory) || !isObj(v.wrong) || !isObj(v.game)) return false
+  const num = (x: unknown) => typeof x === 'number' && Number.isFinite(x)
+  const okAnswer = (a: unknown) => isObj(a) && typeof a.qid === 'string' && typeof a.correct === 'boolean'
   const okAttempt = (a: unknown) =>
-    isObj(a) && typeof a.id === 'string' && typeof a.kind === 'string' && typeof a.finishedAt === 'number' && Array.isArray(a.answers)
+    isObj(a) &&
+    typeof a.id === 'string' &&
+    typeof a.kind === 'string' &&
+    typeof a.title === 'string' &&
+    num(a.finishedAt) &&
+    num(a.total) &&
+    num(a.correct) &&
+    Array.isArray(a.answers) &&
+    a.answers.every(okAnswer)
   if (!v.attempts.every(okAttempt)) return false
-  if (!Object.values(v.wrong).every((w) => isObj(w) && typeof w.qid === 'string' && typeof w.wrongCount === 'number')) return false
-  if (v.retry !== null && !(isObj(v.retry) && typeof v.retry.round === 'number' && Array.isArray(v.retry.queue) && Array.isArray(v.retry.rounds)))
+  if (!Object.values(v.wrong).every((w) => isObj(w) && typeof w.qid === 'string' && num(w.wrongCount) && num(w.lastWrongAt))) return false
+  if (!Object.values(v.game).every((g) => isObj(g) && num(g.plays) && num(g.bestScore) && num(g.lastScore))) return false
+  if (!v.retryHistory.every((h) => isObj(h) && num(h.rounds) && num(h.total) && num(h.clearedAt))) return false
+  if (
+    v.retry !== null &&
+    !(isObj(v.retry) && num(v.retry.round) && Array.isArray(v.retry.queue) && v.retry.queue.every((q) => typeof q === 'string') && Array.isArray(v.retry.rounds))
+  )
     return false
   return true
 }

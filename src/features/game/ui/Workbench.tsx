@@ -118,7 +118,7 @@ export function Workbench({ recipe, mode, customer, hud, onHint, hints = 0, time
   const chill = chillAt ? Math.min(1, (now - chillAt) / CHILL_MS) : 0
 
   const fill = glassFill(game)
-  const next = nextHint(game.log, solution)
+  const next = nextHint(game, solution)
   const hint = next && describe(next)
   const last = ui.last
   const streamColor =
@@ -135,7 +135,7 @@ export function Workbench({ recipe, mode, customer, hud, onHint, hints = 0, time
       <div className="flex flex-wrap items-center gap-2 border-b-2 border-ink bg-bar-wall px-3 py-2 font-pixel text-sm text-paper">{hud}</div>
 
       <BarScene>
-        <div className="flex max-w-40 flex-col items-start gap-3 sm:max-w-48">
+        <div className="flex max-w-36 min-w-0 flex-col items-start gap-3 sm:max-w-48">
           <p
             className="anim-pop relative rounded-pixel border-2 border-ink bg-paper px-3 py-2 text-sm text-ink shadow-pixel-sm"
             key={sheet ? 'reply' : 'order'}
@@ -146,7 +146,8 @@ export function Workbench({ recipe, mode, customer, hud, onHint, hints = 0, time
           <CustomerArt variant={customer % 6} mood={mood} size={wide ? 120 : 84} />
         </div>
 
-        <div className="flex flex-col items-center gap-2">
+        {/* 카운터 상판 위: 서빙 잔과 꺼낸 용기가 바닥을 맞춰 놓인다 (조작 버튼은 상판 앞/아래) */}
+        <div className="flex items-end gap-3">
           <div className="relative">
             {streamColor && (
               <span
@@ -170,17 +171,28 @@ export function Workbench({ recipe, mode, customer, hud, onHint, hints = 0, time
                   garnishIds={g.garnishIds}
                   rim={g.rim}
                   frosted={g.chill === 'chilled' || chill >= 1}
-                  size={wide ? 220 : 170}
+                  size={wide ? 200 : 150}
                 />
               </div>
             ) : (
-              <div className="flex h-[170px] w-28 items-center justify-center rounded-pixel border-2 border-dashed border-bar-glow px-2 text-center font-pixel text-sm text-bar-glow">
+              <div className="mb-2 flex h-[150px] w-28 items-center justify-center rounded-pixel border-2 border-dashed border-bar-glow px-2 text-center font-pixel text-sm text-bar-glow">
                 아래 [잔] 에서 잔을 고르세요
               </div>
             )}
           </div>
-          {!sheet && g.glassId && (
-            <div className="flex min-h-9 items-center gap-2">
+          {shown.map((v) => (
+            <div key={v.id} className={`mb-1 ${busy === v.id ? v.anim : ''}`}>
+              <ToolArt toolId={v.tool} size={wide ? 72 : 52} />
+            </div>
+          ))}
+        </div>
+      </BarScene>
+
+      {!sheet && (g.glassId || shown.length > 0) && (
+        <div className="flex flex-wrap items-stretch gap-2 border-t-2 border-ink bg-bar-wall px-3 py-2">
+          {g.glassId && (
+            <div className="flex min-h-9 items-center gap-2 rounded-pixel border-2 border-ink bg-bar-night px-2 py-1.5">
+              <span className="font-pixel text-xs text-bar-glow">서빙 잔</span>
               {g.chill === 'icing' ? (
                 <>
                   <span
@@ -197,54 +209,41 @@ export function Workbench({ recipe, mode, customer, hud, onHint, hints = 0, time
                     얼음·물 버리기
                   </Button>
                 </>
+              ) : g.chill === 'none' && !g.layers.length && !g.ice ? (
+                <Button size="sm" variant="secondary" onClick={() => dispatch({ type: 'chillGlass' })}>
+                  ❄ 칠링하기
+                </Button>
               ) : (
-                g.chill === 'none' &&
-                !g.layers.length &&
-                !g.ice && (
-                  <Button size="sm" variant="secondary" onClick={() => dispatch({ type: 'chillGlass' })}>
-                    ❄ 칠링하기
-                  </Button>
-                )
+                g.chill === 'chilled' && <span className="font-pixel text-xs text-sky">❄ 칠링 완료</span>
               )}
-              {g.chill === 'chilled' && <span className="font-pixel text-xs text-sky">❄ 칠링 완료</span>}
             </div>
           )}
-        </div>
-
-        {shown.length > 0 && (
-          <div className="flex flex-wrap items-end justify-center gap-3">
-            {shown.map((v) => {
-              const c = game[v.id]
-              return (
-                <div key={v.id} data-vessel={v.id} className="flex w-36 flex-col items-center gap-1.5 rounded-pixel border-2 border-ink bg-bar-wall/80 p-2">
-                  <div className={busy === v.id ? v.anim : ''}>
-                    <ToolArt toolId={v.tool} size={64} />
-                  </div>
-                  <p className="font-pixel text-xs text-bar-glow">{VESSEL_LABEL[v.id]}</p>
-                  <ul aria-label={`${VESSEL_LABEL[v.id]} 내용물`} className="flex flex-wrap justify-center gap-1">
-                    {c.ice && <Chip>🧊 {ICE_LABEL[c.ice]}</Chip>}
-                    {c.contents.map((p, i) => (
-                      <Chip key={i} color={ingredientById(p.ingredientId)?.color}>
-                        {pourText(p)}
-                      </Chip>
-                    ))}
-                    {!c.ice && !c.contents.length && <Chip>비어 있음</Chip>}
-                    {c.done && <Chip>✓ {v.done}</Chip>}
-                  </ul>
-                  {!sheet && (
-                    <div className="flex flex-col gap-1 self-stretch">
-                      <HoldButton label={v.verb} onActive={(on) => setBusy(on ? v.id : null)} onDone={() => dispatch(v.action)} />
-                      <Button size="sm" variant="secondary" onClick={() => dispatch({ type: 'strain', from: v.id })}>
-                        잔에 따르기
-                      </Button>
-                    </div>
-                  )}
+          {shown.map((v) => {
+            const c = game[v.id]
+            return (
+              <div key={v.id} data-vessel={v.id} className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5 rounded-pixel border-2 border-ink bg-bar-night px-2 py-1.5">
+                <span className="font-pixel text-xs text-bar-glow">{VESSEL_LABEL[v.id]}</span>
+                <ul aria-label={`${VESSEL_LABEL[v.id]} 내용물`} className="flex flex-wrap gap-1">
+                  {c.ice && <Chip>🧊 {ICE_LABEL[c.ice]}</Chip>}
+                  {c.contents.map((p, i) => (
+                    <Chip key={i} color={ingredientById(p.ingredientId)?.color}>
+                      {pourText(p)}
+                    </Chip>
+                  ))}
+                  {!c.ice && !c.contents.length && <Chip>비어 있음</Chip>}
+                  {c.done && <Chip>✓ {v.done}</Chip>}
+                </ul>
+                <div className="flex gap-1">
+                  <HoldButton label={v.verb} onActive={(on) => setBusy(on ? v.id : null)} onDone={() => dispatch(v.action)} />
+                  <Button size="sm" variant="secondary" onClick={() => dispatch({ type: 'strain', from: v.id })}>
+                    잔에 따르기
+                  </Button>
                 </div>
-              )
-            })}
-          </div>
-        )}
-      </BarScene>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       <div className="grid gap-3 border-t-2 border-ink bg-bar-night px-3 py-3 md:grid-cols-[1fr_minmax(0,22rem)]">
         <div className="space-y-2">
@@ -360,7 +359,7 @@ function HoldButton({ label, onDone, onActive }: { label: string; onDone: () => 
   return (
     <button
       type="button"
-      className="relative min-h-9 overflow-hidden rounded-pixel border-2 border-ink bg-butter font-pixel text-sm text-ink shadow-pixel-sm select-none active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+      className="relative min-h-9 overflow-hidden rounded-pixel border-2 border-ink bg-butter px-3 font-pixel text-sm text-ink shadow-pixel-sm select-none active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
       onPointerDown={() => {
         onActive(true)
         if (!timer.current) timer.current = setInterval(() => add(0.04), 50)

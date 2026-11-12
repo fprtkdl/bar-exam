@@ -4,8 +4,8 @@ import { applyAttempt, beginRetry, buildAttempt, initialState, parseState } from
 
 const ans = (qid: string, correct: boolean): AnswerRecord => ({ qid, picked: correct ? 0 : 1, correct })
 let clock = 1000
-const run = (s: PersistedState, kind: AttemptKind, answers: AnswerRecord[]) =>
-  applyAttempt(s, buildAttempt({ kind, refId: 'x', title: 't', startedAt: clock, answers }, (clock += 5000)))
+const run = (s: PersistedState, kind: AttemptKind, answers: AnswerRecord[], refId = kind === 'retry' ? `r${s.retry?.round}` : 'x') =>
+  applyAttempt(s, buildAttempt({ kind, refId, title: 't', startedAt: clock, answers }, (clock += 5000)))
 const startCycle = (s: PersistedState): PersistedState => ({ ...s, retry: beginRetry(s, clock) })
 
 test('시도 기록: 점수·시간 계산과 오답 누적', () => {
@@ -68,4 +68,29 @@ test('importState 검증: 형식이 틀리면 null', () => {
   expect(parseState(JSON.stringify({ ...initialState(), retry: 'x' }))).toBeNull()
   const ok = run(initialState(), 'topic', [ans('a', false)])
   expect(parseState(JSON.stringify(ok))).toEqual(ok)
+})
+
+test('같은 retry 회차를 두 번 제출해도 회차는 한 번만 넘어간다', () => {
+  let s = startCycle(run(initialState(), 'topic', [ans('a', false), ans('b', false)]))
+  s = run(s, 'retry', [ans('a', true), ans('b', false)], 'r1')
+  expect(s.retry).toMatchObject({ round: 2, queue: ['b'] })
+  s = run(s, 'retry', [ans('a', true), ans('b', false)], 'r1') // 끝난 1회차 재제출
+  expect(s.retry).toMatchObject({ round: 2, queue: ['b'] })
+  expect(s.retry!.rounds).toHaveLength(1)
+})
+
+test('사라진 문항은 다시 풀기에서 빠지고, 풀 문항 없는 사이클은 새로 만든다', () => {
+  const exists = (q: string) => q !== 'gone'
+  let s = run(initialState(), 'topic', [ans('gone', false), ans('a', false)])
+  expect(beginRetry(s, clock, exists)!.queue).toEqual(['a'])
+  s = { ...s, retry: { round: 3, queue: ['gone'], startedAt: 0, rounds: [] } }
+  expect(beginRetry(s, clock, exists)).toMatchObject({ round: 1, queue: ['a'] })
+  expect(beginRetry(run(initialState(), 'topic', [ans('gone', false)]), clock, exists)).toBeNull()
+})
+
+test('importState 검증: 답안·게임 기록 내부 형식까지 확인', () => {
+  const ok = run(initialState(), 'topic', [ans('a', false)])
+  expect(parseState(JSON.stringify({ ...ok, attempts: [{ ...ok.attempts[0], answers: [null] }] }))).toBeNull()
+  expect(parseState(JSON.stringify({ ...ok, game: { x: { plays: 'a' } } }))).toBeNull()
+  expect(parseState(JSON.stringify({ ...ok, retry: { round: 1, queue: [1], rounds: [] } }))).toBeNull()
 })

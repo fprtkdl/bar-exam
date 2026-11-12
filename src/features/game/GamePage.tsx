@@ -83,7 +83,8 @@ function Play({ session, setSession }: { session: Session; setSession: Dispatch<
   const isLast = session.index === session.queue.length - 1
 
   const onServed = (sheet: ScoreSheet) => {
-    recordGame(recipe.id, sheet.total)
+    // 손도 못 댄 채 시간이 끝난 잔은 레시피 게임 기록에 남기지 않는다 (시험 결과에만 0점)
+    if (!(timeUp && sheet.total === 0)) recordGame(recipe.id, sheet.total)
     setSession((s) => s && { ...s, scores: [...s.scores.slice(0, s.index), sheet.total] })
   }
 

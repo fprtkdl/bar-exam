@@ -16,7 +16,7 @@ export default function RecipeDetailPage() {
   const glass = glassById(r.glassId)
   const fact = (k: string, v: string) => (
     <div className="flex justify-between gap-3 border-b border-ink-faint py-1.5 last:border-0">
-      <dt className="text-ink-soft">{k}</dt>
+      <dt className="shrink-0 text-ink-soft">{k}</dt>
       <dd className="text-right font-semibold">{v}</dd>
     </div>
   )
@@ -33,7 +33,7 @@ export default function RecipeDetailPage() {
               {fact('기주', BASE_LABEL[r.base])}
               {fact('기법', r.methods.map((m) => METHOD_LABEL[m]).join(' → '))}
               {fact('잔', `${glass?.nameKo} (${glass?.capacityOz}oz)`)}
-              {fact('잔 얼음', r.glassIce === 'cube' ? '각얼음' : r.glassIce === 'crushed' ? '크러시드 아이스' : '없음')}
+              {fact('잔 얼음', r.glassIce === 'cube' ? '큐브드 아이스' : r.glassIce === 'crushed' ? '크러시드 아이스' : '없음')}
               {fact('칠링', r.chill ? '필요' : '불필요')}
               {r.rim && fact('림', r.rim === 'salt' ? '소금' : '설탕')}
               {fact('가니쉬', r.garnishIds.length ? r.garnishIds.map((g) => garnishById(g)?.nameKo).join(', ') : '없음')}

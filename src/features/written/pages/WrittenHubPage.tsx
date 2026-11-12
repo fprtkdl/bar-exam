@@ -1,4 +1,5 @@
-import { questions, units } from '../../../data/written'
+import { examMeta, questions, units } from '../../../data/written'
+import { verifiedPeriod } from '../../../data/written/examMeta'
 import { useStore } from '../../../lib/store'
 import { Badge, Card, PageHeader, ProgressBar } from '../../../ui'
 import type { Tone } from '../../../ui'
@@ -27,6 +28,18 @@ export default function WrittenHubPage() {
           </Card>
         ))}
       </nav>
+
+      <Card tone="butter" className="mb-8">
+        <h2 className="mb-2 font-pixel">시험 안내</h2>
+        <ul className="list-disc space-y-1 pl-5 text-sm leading-relaxed">
+          <li>
+            필기는 객관식 4지선다 {examMeta.questionCount}문항, {examMeta.minutes}분, {examMeta.passScore}점 이상 합격입니다.
+          </li>
+          <li>
+            이 사이트는 원문을 확인한 출제기준({verifiedPeriod})으로 정리했습니다. 2025년 이후 적용본은 원문을 확인하지 못해 세부 항목이 다를 수 있습니다.
+          </li>
+        </ul>
+      </Card>
 
       <h2 className="mb-3 font-pixel text-xl">단원</h2>
       <ol className="grid gap-4 md:grid-cols-2">

@@ -2,7 +2,7 @@ import { type GlassFill, mixColor } from '../../../art'
 import { blend } from '../../../art/mixColor'
 import { garnishById, glassById, ingredientById } from '../../../data/practical'
 import type { PourUnit } from '../../../types/practical'
-import { formatAmount, ICE_LABEL, josa, VESSEL_LABEL, type Action, type GameState, type Pour, type Target } from '../engine'
+import { formatAmount, ICE_LABEL, initialState, josa, step, VESSEL_LABEL, type Action, type GameState, type Pour, type Target } from '../engine'
 
 const CLEAR = '#d9eef8'
 const OPAQUE = new Set(['light-milk', 'baileys', 'pina-colada-mix'])
@@ -105,10 +105,36 @@ export function describe(a: Action): string {
   }
 }
 
-/** 풀이 중 아직 하지 않은 첫 단계. 순서와 무관하게 로그에 같은 액션이 있으면 한 번 한 것으로 친다 */
-export function nextHint(log: Action[], solution: Action[]): Action | null {
+/** 순서와 무관하게 비교할 상태 요약 (따른 순서·칠링 중 따름 여부는 무시) */
+function snapshot(s: GameState): string {
+  const g = s.glass
+  const pours = (ps: Pour[]) => ps.map((p) => `${p.ingredientId}:${p.amount}:${p.unit}`).sort()
+  return JSON.stringify([
+    g.glassId,
+    g.chill,
+    g.ice,
+    g.rim,
+    [...g.garnishIds].sort(),
+    g.layers.map((l) => `${l.ingredientId}:${l.amount}:${l.unit}:${l.via}:${l.mixed}`).sort(),
+    s.served,
+    (['shaker', 'mixingGlass', 'blender'] as const).map((v) => [s[v].ice, s[v].done, pours(s[v].contents)]),
+  ])
+}
+
+/** 풀이(solve) 순서상 다음 단계 하나.
+ * 지금 상태가 풀이 k단계까지 한 상태와 같으면 k+1번째 단계. 레시피에서 벗어났으면 로그에 없는 첫 풀이 단계 */
+export function nextHint(state: GameState, solution: Action[]): Action | null {
+  const here = snapshot(state)
+  let s = initialState()
+  let at = -1
+  for (let i = 0; i <= solution.length; i++) {
+    if (snapshot(s) === here) at = i
+    if (i < solution.length) s = step(s, solution[i]).state
+  }
+  if (at >= 0) return solution[at] ?? null
+
   const key = (a: Action) => JSON.stringify(a, Object.keys(a).sort())
-  const left = log.map(key)
+  const left = state.log.map(key)
   for (const a of solution) {
     const i = left.indexOf(key(a))
     if (i < 0) return a

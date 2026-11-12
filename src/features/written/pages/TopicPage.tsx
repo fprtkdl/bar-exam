@@ -29,7 +29,7 @@ function Block({ b }: { b: NoteBlock }) {
             <thead className="bg-paper-deep">
               <tr>
                 {b.head.map((h, i) => (
-                  <th key={i} scope="col" className="border-2 border-ink px-2 py-1.5 text-left font-semibold">
+                  <th key={i} scope="col" className="border-2 border-ink px-2 py-1.5 text-left font-semibold first:min-w-[4.5em] first:break-keep">
                     <Rich text={h} />
                   </th>
                 ))}
@@ -39,7 +39,7 @@ function Block({ b }: { b: NoteBlock }) {
               {b.rows.map((r, i) => (
                 <tr key={i}>
                   {r.map((c, j) => (
-                    <td key={j} className="border-2 border-ink px-2 py-1.5 align-top">
+                    <td key={j} className="border-2 border-ink px-2 py-1.5 align-top first:min-w-[4.5em] first:break-keep">
                       <Rich text={c} />
                     </td>
                   ))}

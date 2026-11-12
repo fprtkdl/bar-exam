@@ -27,9 +27,8 @@ export function rateBy(attempts: AttemptRecord[], key: (m: Meta) => string, look
 }
 
 export const byUnit = (a: AttemptRecord[], l?: Lookup) => rateBy(a, (m) => m.unitId, l)
-export const byTopic = (a: AttemptRecord[], l?: Lookup) => rateBy(a, (m) => m.topicId, l)
+const byTopic = (a: AttemptRecord[], l?: Lookup) => rateBy(a, (m) => m.topicId, l)
 export const byType = (a: AttemptRecord[], l?: Lookup) => rateBy(a, (m) => m.type, l)
-export const byDifficulty = (a: AttemptRecord[], l?: Lookup) => rateBy(a, (m) => String(m.difficulty), l)
 
 export type MockPoint = { id: string; title: string; finishedAt: number; score: number }
 
@@ -50,9 +49,10 @@ export function weakTopics(attempts: AttemptRecord[], limit = 5, lookup?: Lookup
     .map(([topicId, r]) => ({ topicId, ...r }))
 }
 
-/** 자주 틀린 문항: wrongCount 많은 순 (같으면 최근 순) */
-export function topWrong(wrong: Record<string, WrongEntry>, limit = 10): WrongEntry[] {
+/** 자주 틀린 문항: wrongCount 많은 순 (같으면 최근 순). 데이터에서 사라진 qid 는 자르기 전에 뺀다 */
+export function topWrong(wrong: Record<string, WrongEntry>, limit = 10, lookup: Lookup = defaultLookup): WrongEntry[] {
   return Object.values(wrong)
+    .filter((w) => lookup(w.qid))
     .sort((a, b) => b.wrongCount - a.wrongCount || b.lastWrongAt - a.lastWrongAt)
     .slice(0, limit)
 }

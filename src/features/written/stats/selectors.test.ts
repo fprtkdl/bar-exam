@@ -30,6 +30,7 @@ describe('selectors', () => {
   })
   it('자주 틀린 문항 정렬', () => {
     const w = (qid: string, wrongCount: number, lastWrongAt: number): WrongEntry => ({ qid, wrongCount, lastWrongAt, lastPicked: 0, cleared: false })
-    expect(topWrong({ x: w('x', 1, 9), y: w('y', 3, 1), z: w('z', 3, 5) }, 2).map((e) => e.qid)).toEqual(['z', 'y'])
+    const has = (id: string) => (id === 'gone' ? undefined : META.a)
+    expect(topWrong({ gone: w('gone', 9, 9), x: w('x', 1, 9), y: w('y', 3, 1), z: w('z', 3, 5) }, 2, has).map((e) => e.qid)).toEqual(['z', 'y'])
   })
 })

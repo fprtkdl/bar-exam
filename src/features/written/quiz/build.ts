@@ -5,7 +5,7 @@ import { useStore } from '../../../lib/store'
 import type { AnswerRecord, AttemptKind } from '../../../types/storage'
 import type { Question } from '../../../types/written'
 
-export type QuizSet = { refId: string; title: string; questionIds: string[] }
+type QuizSet = { refId: string; title: string; questionIds: string[] }
 export type ResolvedQuiz = { title: string; questions: Question[]; timed: boolean }
 
 const MOCK_ROUNDS = 5
@@ -74,9 +74,9 @@ export function resolveQuiz(kind: AttemptKind, refId: string): ResolvedQuiz | nu
     const set = mockRounds().find((s) => s.refId === refId)
     if (set) r = { title: set.title, questions: toQuestions(set.questionIds), timed: true }
   } else if (kind === 'retry') {
-    // refId 와 상관없이 진행 중 사이클의 현재 회차를 푼다
+    // 진행 중 사이클의 현재 회차만 풀 수 있다 (끝난 회차 주소로 다시 들어와도 기록이 꼬이지 않게)
     const cycle = useStore.getState().retry
-    if (cycle) r = { title: `오답 다시 풀기 ${cycle.round}회차`, questions: toQuestions(cycle.queue), timed: false }
+    if (cycle && refId === `r${cycle.round}`) r = { title: `오답 다시 풀기 ${cycle.round}회차`, questions: toQuestions(cycle.queue), timed: false }
   }
   return r && r.questions.length ? r : null
 }

@@ -23,6 +23,8 @@ describe('solve → judge', () => {
   })
   test('배점 합 100', () => {
     expect(judge(initialState(), R('manhattan')).items.reduce((s, i) => s + i.max, 0)).toBe(100)
+    // 아무것도 따르지 않은 잔(시간 초과)은 0점 — 빌드 전용·가니쉬 없는 레시피도
+    for (const r of recipes) expect(judge(run([{ type: 'pickGlass', glassId: r.glassId }]), r).total, r.id).toBe(0)
   })
 })
 

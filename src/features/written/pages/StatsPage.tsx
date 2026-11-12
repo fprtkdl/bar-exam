@@ -37,26 +37,26 @@ function Bars({ title, rows }: { title: string; rows: { label: string; seen: num
 }
 
 function Trend({ pts }: { pts: MockPoint[] }) {
-  const W = 480, H = 200, L = 32, R = 12, T = 12, B = 24
+  const W = 360, H = 180, L = 30, R = 10, T = 16, B = 16
   const x = (i: number) => (pts.length === 1 ? (L + W - R) / 2 : L + 24 + (i * (W - L - R - 48)) / (pts.length - 1))
   const y = (s: number) => T + ((100 - s) * (H - T - B)) / 100
   return (
     <Card>
       <h2 className="mb-2 font-pixel">모의고사 점수 추이</h2>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`모의고사 ${pts.length}회 점수 추이. 점선은 합격선 ${examMeta.passScore}점`} className="w-full max-w-2xl">
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`모의고사 ${pts.length}회 점수 추이. 점선은 합격선 ${examMeta.passScore}점`} className="w-full max-w-lg">
         {[0, 50, 100].map((g) => (
           <g key={g}>
             <line x1={L} x2={W - R} y1={y(g)} y2={y(g)} stroke="var(--color-ink-faint)" strokeWidth="1" />
-            <text x={L - 4} y={y(g) + 4} textAnchor="end" fontSize="11" fill="var(--color-ink-soft)">{g}</text>
+            <text x={L - 4} y={y(g) + 4} textAnchor="end" fontSize="13" fill="var(--color-ink-soft)">{g}</text>
           </g>
         ))}
         <line x1={L} x2={W - R} y1={y(examMeta.passScore)} y2={y(examMeta.passScore)} stroke="var(--color-bad)" strokeWidth="2" strokeDasharray="5 4" />
-        <text x={L + 4} y={y(examMeta.passScore) - 4} textAnchor="start" fontSize="11" fill="var(--color-bad)">합격선 {examMeta.passScore}</text>
+        <text x={L + 4} y={y(examMeta.passScore) - 4} textAnchor="start" fontSize="13" fill="var(--color-bad)">합격선 {examMeta.passScore}</text>
         <polyline fill="none" stroke="var(--color-ink)" strokeWidth="2.5" strokeLinejoin="round" points={pts.map((p, i) => `${x(i)},${y(p.score)}`).join(' ')} />
         {pts.map((p, i) => (
           <g key={p.id}>
             <circle cx={x(i)} cy={y(p.score)} r="5" fill={p.score >= examMeta.passScore ? 'var(--color-mint)' : 'var(--color-peach)'} stroke="var(--color-ink)" strokeWidth="2" />
-            <text x={x(i)} y={y(p.score) - 9} textAnchor="middle" fontSize="11" fill="var(--color-ink)">{p.score}</text>
+            <text x={x(i)} y={y(p.score) - 9} textAnchor="middle" fontSize="13" fill="var(--color-ink)">{p.score}</text>
           </g>
         ))}
       </svg>
@@ -93,7 +93,7 @@ export default function StatsPage() {
   const weakTypes = Object.entries(typeR).filter(([, r]) => r.seen >= 3).sort((a, b) => a[1].rate - b[1].rate).slice(0, 2)
   const typeTopic = rateBy(attempts, (m) => `${m.type}|${m.topicId}`)
   const weak = weakTopics(attempts)
-  const wrongTop = topWrong(wrong).filter((w) => questionById[w.qid])
+  const wrongTop = topWrong(wrong)
 
   if (seen === 0) {
     return (

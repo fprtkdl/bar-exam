@@ -1,5 +1,7 @@
 import { Suspense, useEffect } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
+import { practicalMeta } from '../data/practical'
+import { verifiedPeriod } from '../data/written/examMeta'
 
 const NAV = [
   { to: '/', label: '홈', match: (p: string) => p === '/' },
@@ -53,7 +55,9 @@ export function Layout() {
 
       <footer className="border-t-2 border-ink bg-paper-deep pb-20 sm:pb-0">
         <div className="mx-auto max-w-5xl px-4 py-4 text-xs text-ink-soft">
-          <p>비공식 학습용 사이트 · 출제기준/레시피 기준일 2026-11-12</p>
+          <p>
+            비공식 학습용 사이트 · 필기 출제기준 {verifiedPeriod} · 실기 표준 레시피 {practicalMeta.standardYear}년 기준
+          </p>
           <p>문제는 출제기준 범위의 사실에 기반한 창작 문제이며 Q-net 기출문제가 아닙니다. 학습 기록은 이 브라우저에만 저장됩니다.</p>
         </div>
       </footer>

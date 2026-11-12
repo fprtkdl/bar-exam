@@ -85,6 +85,7 @@ test('resolveQuiz: 종류별 해석, 없으면 null', () => {
   const r = resolveQuiz('retry', 'r1')
   expect(r?.title).toBe('오답 다시 풀기 1회차')
   expect(r?.questions.map((q) => q.id)).toEqual(['u1-t1-q01'])
+  expect(resolveQuiz('retry', 'r2')).toBeNull() // 현재 회차가 아닌 주소
 })
 
 test('tally·점수·합격', () => {

@@ -1,13 +1,14 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { AttemptRecord, PersistedState, RetryCycle } from '../types/storage'
-import { applyAttempt, applyGame, beginRetry, buildAttempt, initialState, parseState, type AttemptInput } from './progress'
+import { applyAttempt, applyGame, beginRetry, buildAttempt, initialState, isPersistedState, parseState, type AttemptInput } from './progress'
 
-export const STORAGE_KEY = 'bar-exam:v1'
+const STORAGE_KEY = 'bar-exam:v1'
 
 type Actions = {
   recordAttempt(input: AttemptInput): AttemptRecord
-  startRetry(): RetryCycle | null
+  /** exists: 데이터에 남아 있는 문항인지 (사라진 문항은 다시 풀기에서 뺀다) */
+  startRetry(exists?: (qid: string) => boolean): RetryCycle | null
   abandonRetry(): void
   recordGame(recipeId: string, score: number): void
   resetAll(): void
@@ -33,8 +34,8 @@ export const useStore = create<PersistedState & Actions>()(
         set(applyAttempt(pick(get()), attempt))
         return attempt
       },
-      startRetry() {
-        const cycle = beginRetry(get(), Date.now())
+      startRetry(exists) {
+        const cycle = beginRetry(get(), Date.now(), exists)
         if (cycle !== get().retry) set({ retry: cycle })
         return cycle
       },
@@ -49,6 +50,12 @@ export const useStore = create<PersistedState & Actions>()(
       },
       exportState: () => JSON.stringify(pick(get()), null, 2),
     }),
-    { name: STORAGE_KEY, version: 1, partialize: (s) => pick(s) },
+    {
+      name: STORAGE_KEY,
+      version: 1,
+      partialize: (s) => pick(s),
+      // 손상된 저장값(직접 수정·다른 버전)은 버리고 빈 기록으로 시작 — 화면이 깨지지 않게
+      merge: (persisted, current) => (isPersistedState(persisted) ? { ...current, ...pick(persisted) } : current),
+    },
   ),
 )
