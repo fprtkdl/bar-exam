@@ -219,6 +219,59 @@ await step('게임 시험 모드 7분 시간 초과 → 결과 화면', async ()
   expect(Object.keys(rec).length === 0, '손대지 않은 잔이 게임 기록에 남음')
 })
 
+const attemptCount = () => page.evaluate(() => JSON.parse(localStorage.getItem('bar-exam:v1') ?? '{"state":{"attempts":[]}}').state.attempts.length)
+const mockPage = async () => {
+  page = await newPage()
+  await page.clock.install()
+  await go('/written/quiz/mock/1')
+  await page.getByRole('timer').waitFor()
+}
+const answerFirst = async (k) => {
+  for (let i = 0; i < k; i++) {
+    await page.getByRole('button', { name: new RegExp(`^${i + 1}번,`) }).click()
+    await page.locator('article button').first().click()
+  }
+}
+
+await step('모의고사 그만두기: 확인 후 기록 없이 목록으로 → 재진입 시 새 시험', async () => {
+  await mockPage()
+  await answerFirst(3)
+  await page.getByRole('button', { name: '그만두기' }).click()
+  await page.getByText('지금까지의 답안은 저장되지 않고 기록에도 남지 않습니다.').waitFor()
+  await shot('mock-quit-modal-1280')
+  await page.getByRole('dialog').getByRole('button', { name: '그만두기' }).click()
+  await page.waitForURL(/#\/written\/mock\/?$/)
+  await page.getByRole('timer').waitFor({ state: 'detached' })
+  expect((await attemptCount()) === 0, '그만두기인데 attempts 가 늘어남')
+  await go('/written/quiz/mock/1')
+  await page.getByRole('timer').waitFor()
+  const t = await text('main')
+  expect(t.includes('응답 0/60') && /60:00|59:5\d/.test(t), `새 시험이 아님: ${t.replace(/\s+/g, ' ').slice(0, 80)}`)
+})
+
+await step('모의고사 만료 세션 재진입: 자동 제출 없이 선택 모달 → 버리고 새로 시작', async () => {
+  await mockPage()
+  await answerFirst(3)
+  await go('/written/mock')
+  await page.clock.fastForward(61 * 60_000)
+  await go('/written/quiz/mock/1')
+  await page.getByText('시험 시간이 이미 끝났습니다. (응답 3/60)').waitFor()
+  expect((await attemptCount()) === 0, '진입만으로 attempts 가 늘어남')
+  await shot('mock-expired-modal-1280')
+  await page.getByRole('button', { name: '기록 없이 버리고 새로 시작' }).click()
+  expect((await attemptCount()) === 0, '버렸는데 attempts 가 늘어남')
+  const t = await text('main')
+  expect(t.includes('응답 0/60') && /60:00|59:5\d/.test(t), `타이머가 새로 시작되지 않음: ${t.slice(0, 80)}`)
+})
+
+await step('모의고사 보는 중 시간 종료 → 자동 제출', async () => {
+  await mockPage()
+  await answerFirst(2)
+  await page.clock.fastForward(60 * 60_000 + 2000)
+  await page.waitForURL(/written\/result\//)
+  expect((await attemptCount()) === 1, '자동 제출 기록이 1건이 아님')
+})
+
 await browser.close()
 for (const r of results) console.log(r)
 console.log(errors.length ? `콘솔 에러 ${errors.length}건:\n${errors.join('\n')}` : '콘솔 에러 0')

@@ -11,15 +11,20 @@ type Saved = { startedAt: number; picks: (ChoiceIndex | null)[]; flags: boolean[
 
 const keyOf = (refId: string) => `bar-exam:mock:${refId}`
 
-/** 새로고침해도 이어 풀도록 sessionStorage 에서 복원. 문항 수가 바뀌었으면 새로 시작 */
-function load(refId: string, n: number): Saved {
+const fresh = (n: number): Saved => ({ startedAt: Date.now(), picks: Array(n).fill(null), flags: Array(n).fill(false) })
+
+/** 시험 시간이 이미 끝났는가 (정각이 되는 순간부터 만료) */
+export const isExpired = (startedAt: number, now: number, minutes: number) => now >= startedAt + minutes * 60_000
+
+/** 새로고침해도 이어 풀도록 sessionStorage 에서 복원. 저장된 세션이 없거나 문항 수가 바뀌었으면 null */
+function load(refId: string, n: number): Saved | null {
   try {
     const s = JSON.parse(sessionStorage.getItem(keyOf(refId)) ?? 'null') as Saved | null
     if (s && typeof s.startedAt === 'number' && s.picks?.length === n && s.flags?.length === n) return s
   } catch {
     /* 손상된 값은 버리고 새로 시작 */
   }
-  return { startedAt: Date.now(), picks: Array(n).fill(null), flags: Array(n).fill(false) }
+  return null
 }
 
 const mmss = (ms: number) => {
@@ -32,7 +37,15 @@ export function MockExam({ refId, quiz }: { refId: string; quiz: ResolvedQuiz })
   const navigate = useNavigate()
   const recordAttempt = useStore((s) => s.recordAttempt)
   const n = quiz.questions.length
-  const [saved, setSaved] = useState(() => load(refId, n))
+  // 진입 시점에 이미 만료된 세션은 자동 제출하지 않고 사용자에게 묻는다
+  const [init] = useState(() => {
+    const s = load(refId, n)
+    return { saved: s ?? fresh(n), stale: !!s && isExpired(s.startedAt, Date.now(), examMeta.minutes) }
+  })
+  const [saved, setSaved] = useState(init.saved)
+  const [stale, setStale] = useState(init.stale)
+  const [staleKey, setStaleKey] = useState(0) // Esc·배경 클릭으로 닫혀도 선택 모달을 다시 띄운다
+  const [quit, setQuit] = useState(false)
   const [idx, setIdx] = useState(0)
   const [now, setNow] = useState(Date.now)
   const [confirm, setConfirm] = useState(false)
@@ -71,8 +84,21 @@ export function MockExam({ refId, quiz }: { refId: string; quiz: ResolvedQuiz })
   }, [navigate, quiz, recordAttempt, refId, saved])
 
   useEffect(() => {
-    if (left === 0) submit()
-  }, [left, submit])
+    if (left === 0 && !stale) submit()
+  }, [left, stale, submit])
+
+  const discard = () => {
+    sessionStorage.removeItem(keyOf(refId))
+    setSaved(fresh(n))
+    setIdx(0)
+    setNow(Date.now())
+    setStale(false)
+  }
+  const quitExam = () => {
+    done.current = true
+    sessionStorage.removeItem(keyOf(refId))
+    navigate('/written/mock', { replace: true })
+  }
 
   const update = (patch: (s: Saved) => Partial<Saved>) => setSaved((s) => ({ ...s, ...patch(s) }))
   const pick = (c: ChoiceIndex) => update((s) => ({ picks: s.picks.map((p, i) => (i === idx ? c : p)) }))
@@ -153,6 +179,9 @@ export function MockExam({ refId, quiz }: { refId: string; quiz: ResolvedQuiz })
           <Button className="mt-3 w-full" onClick={() => setConfirm(true)}>
             답안 제출
           </Button>
+          <Button variant="ghost" size="sm" className="mt-2 w-full" onClick={() => setQuit(true)}>
+            그만두기
+          </Button>
         </div>
       </aside>
 
@@ -197,6 +226,42 @@ export function MockExam({ refId, quiz }: { refId: string; quiz: ResolvedQuiz })
         </p>
         {flagged > 0 && <p className="mt-2">★ 나중에 볼 문제로 표시한 문항이 {flagged}개 있습니다.</p>}
         <p className="mt-2 text-sm text-ink-soft">제출하면 수정할 수 없고, 해설은 결과 화면에서 볼 수 있습니다.</p>
+      </Modal>
+
+      <Modal
+        open={quit}
+        onClose={() => setQuit(false)}
+        title="시험을 그만둘까요?"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setQuit(false)}>
+              계속 풀기
+            </Button>
+            <Button onClick={quitExam}>그만두기</Button>
+          </>
+        }
+      >
+        <p>지금까지의 답안은 저장되지 않고 기록에도 남지 않습니다.</p>
+      </Modal>
+
+      <Modal
+        key={staleKey}
+        open={stale}
+        onClose={() => stale && setStaleKey((k) => k + 1)}
+        title="시험 시간이 종료됨"
+        footer={
+          <>
+            <Button variant="secondary" onClick={discard}>
+              기록 없이 버리고 새로 시작
+            </Button>
+            <Button onClick={submit}>그대로 제출</Button>
+          </>
+        }
+      >
+        <p>
+          시험 시간이 이미 끝났습니다. (응답 {answered}/{n})
+        </p>
+        <p className="mt-2 text-sm text-ink-soft">제출하면 풀지 않은 문항은 오답으로 기록됩니다.</p>
       </Modal>
     </div>
   )
