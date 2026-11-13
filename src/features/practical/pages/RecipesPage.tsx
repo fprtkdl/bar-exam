@@ -1,11 +1,9 @@
 import { useMemo, useState } from 'react'
 import { glasses, recipes } from '../../../data/practical'
-import { METHOD_LABEL, type MethodId } from '../../../types/practical'
-import { Button, EmptyState, PageHeader } from '../../../ui'
+import type { MethodId } from '../../../types/practical'
+import { Button, EmptyState, PageHeader, SearchInput, Select } from '../../../ui'
 import { RecipeCard } from '../RecipeCard'
-import { BASE_LABEL } from '../lib/labels'
-
-const SEL = 'min-h-11 rounded-pixel border-2 border-ink bg-paper px-2 text-base'
+import { BASE_LABEL, METHOD_SHORT } from '../lib/labels'
 
 export default function RecipesPage() {
   const [q, setQ] = useState('')
@@ -44,22 +42,13 @@ export default function RecipesPage() {
           </Button>
         }
       />
-      <form role="search" onSubmit={(e) => e.preventDefault()} className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <input aria-label="이름 검색" placeholder="이름 검색" value={q} onChange={(e) => setQ(e.target.value)} className={`${SEL} col-span-2 sm:col-span-1`} />
-        <select aria-label="기주" value={base} onChange={(e) => setBase(e.target.value)} className={SEL}>
-          <option value="">기주 전체</option>
-          {bases.map((b) => <option key={b} value={b}>{BASE_LABEL[b]}</option>)}
-        </select>
-        <select aria-label="기법" value={method} onChange={(e) => setMethod(e.target.value)} className={SEL}>
-          <option value="">기법 전체</option>
-          {(Object.keys(METHOD_LABEL) as MethodId[]).map((m) => <option key={m} value={m}>{METHOD_LABEL[m]}</option>)}
-        </select>
-        <select aria-label="잔" value={glass} onChange={(e) => setGlass(e.target.value)} className={SEL}>
-          <option value="">잔 전체</option>
-          {glasses.map((g) => <option key={g.id} value={g.id}>{g.nameKo}</option>)}
-        </select>
+      <form role="search" onSubmit={(e) => e.preventDefault()} className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <SearchInput label="이름 검색" placeholder="이름 검색" value={q} onChange={setQ} className="col-span-2 sm:col-span-1" />
+        <Select label="기주" value={base} onChange={setBase} options={[{ value: '', label: '전체' }, ...bases.map((b) => ({ value: b, label: BASE_LABEL[b] }))]} />
+        <Select label="기법" value={method} onChange={setMethod} options={[{ value: '', label: '전체' }, ...(Object.keys(METHOD_SHORT) as MethodId[]).map((m) => ({ value: m, label: METHOD_SHORT[m] }))]} />
+        <Select label="잔" value={glass} onChange={setGlass} className="col-span-2 sm:col-span-1" options={[{ value: '', label: '전체' }, ...glasses.map((g) => ({ value: g.id, label: g.nameKo }))]} />
       </form>
-      <p className="mb-3 text-sm text-ink-soft" aria-live="polite">{list.length}종</p>
+      <p className="mb-3 font-pixel text-sm text-ink-soft" aria-live="polite">{list.length}종</p>
       {list.length === 0 ? (
         <EmptyState title="조건에 맞는 레시피가 없어요" description="필터를 바꾸거나 검색어를 지워 보세요." />
       ) : (

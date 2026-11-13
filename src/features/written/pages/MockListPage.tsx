@@ -1,6 +1,6 @@
 import { examMeta } from '../../../data/written'
 import { useStore } from '../../../lib/store'
-import { Badge, Card, PageHeader } from '../../../ui'
+import { Badge, Card, Icon, PageHeader } from '../../../ui'
 import { isPass, mockRounds, toScore } from '../quiz/build'
 
 export default function MockListPage() {
@@ -11,7 +11,7 @@ export default function MockListPage() {
     <>
       <PageHeader title="모의고사" subtitle="실제 시험처럼 시간을 재고, 제출한 뒤에 해설을 봅니다." back={{ to: '/written', label: '필기' }} />
 
-      <Card tone="butter" className="mb-6">
+      <Card tone="butter" className="mb-8">
         <h2 className="mb-2 font-pixel">시험 안내</h2>
         <ul className="list-disc space-y-1 pl-5 text-sm leading-relaxed">
           <li>
@@ -31,16 +31,23 @@ export default function MockListPage() {
           const ready = n > 0
           return (
             <li key={r.refId}>
-              <Card tone={ready ? 'peach' : 'paper'} to={ready ? `/written/quiz/mock/${r.refId}` : undefined}>
-                <div className="flex items-start justify-between gap-2">
+              <Card tone={ready ? 'peach' : 'paper'} to={ready ? `/written/quiz/mock/${r.refId}` : undefined} className="h-full">
+                <div className="flex min-h-6 items-center justify-between gap-2">
                   <p className="font-pixel text-lg">{r.title}</p>
-                  {best !== null && <Badge tone={isPass(best) ? 'good' : 'bad'}>{isPass(best) ? '✓ 합격' : '✗ 불합격'}</Badge>}
+                  {best !== null && (
+                    <Badge tone={isPass(best) ? 'good' : 'bad'}>
+                      <Icon name={isPass(best) ? 'check' : 'x'} size={12} />
+                      {isPass(best) ? '합격' : '불합격'}
+                    </Badge>
+                  )}
                 </div>
                 <p className="mt-2 text-sm">
-                  {ready ? `${n}문항` : '문항 준비 중'}
+                  {ready ? `${n}문항 · ${examMeta.minutes}분` : '문항 준비 중'}
                   {ready && n < examMeta.questionCount && ` (준비된 문항만 · 정규 ${examMeta.questionCount}문항)`}
                 </p>
-                <p className="mt-1 text-sm">{best === null ? '아직 응시하지 않았어요' : `최고 ${best}점 · 응시 ${mine.length}회`}</p>
+                <p className={`mt-1 font-pixel text-xs tabular-nums ${best === null ? 'text-ink-soft' : ''}`}>
+                  {best === null ? '아직 응시하지 않았어요' : `최고 ${best}점 · 응시 ${mine.length}회`}
+                </p>
               </Card>
             </li>
           )

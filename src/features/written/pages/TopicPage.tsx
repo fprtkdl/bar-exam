@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { notes, questions, units } from '../../../data/written'
 import type { NoteBlock } from '../../../types/written'
-import { Badge, Button, Card, EmptyState, PageHeader } from '../../../ui'
+import { Badge, Button, Card, EmptyState, Icon, PageHeader } from '../../../ui'
 import { Rich } from '../quiz/QuestionView'
 
 function Block({ b }: { b: NoteBlock }) {
@@ -24,8 +24,9 @@ function Block({ b }: { b: NoteBlock }) {
       )
     case 'table':
       return (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse border-2 border-ink text-sm">
+        // 모바일: 3열 이상 표는 눌러 담지 않고 가로로 스크롤
+        <div className="-mx-1 overflow-x-auto px-1 pb-1">
+          <table className={`w-full border-collapse border-2 border-ink text-sm ${b.head.length >= 3 ? 'min-w-[32rem]' : ''}`}>
             <thead className="bg-paper-deep">
               <tr>
                 {b.head.map((h, i) => (
@@ -51,8 +52,11 @@ function Block({ b }: { b: NoteBlock }) {
       )
     case 'tip':
       return (
-        <aside className="rounded-pixel border-2 border-ink bg-butter p-3 leading-relaxed">
-          <span className="mr-1 font-pixel">시험 포인트</span>
+        <aside className="rounded-pixel border-2 border-ink bg-butter p-3 leading-relaxed sm:p-4">
+          <p className="mb-1 flex items-center gap-2 font-pixel text-sm">
+            <Icon name="tip" />
+            시험 포인트
+          </p>
           <Rich text={b.text} />
         </aside>
       )
@@ -77,7 +81,8 @@ export default function TopicPage() {
 
   const quizBtn = (
     <Button to={qn ? `/written/quiz/topic/${topic.id}` : undefined} disabled={!qn}>
-      {qn ? `확인 문제 ${Math.min(5, qn)}문항` : "확인 문제 준비 중"}
+      <Icon name="pencil" />
+      {qn ? `확인 문제 ${Math.min(5, qn)}문항` : '확인 문제 준비 중'}
     </Button>
   )
 
@@ -88,7 +93,7 @@ export default function TopicPage() {
       {note ? (
         <>
           {note.keywords.length > 0 && (
-            <ul aria-label="핵심 키워드" className="mb-6 flex flex-wrap gap-2">
+            <ul aria-label="핵심 키워드" className="mb-8 flex flex-wrap items-center gap-2">
               {note.keywords.map((k) => (
                 <li key={k} className="flex">
                   <Badge tone="sky">{k}</Badge>

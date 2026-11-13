@@ -1,7 +1,8 @@
 import { examMeta, questionById, units } from '../../../data/written'
 import { useStore } from '../../../lib/store'
 import { QUESTION_TYPE_LABEL, type QuestionType } from '../../../types/written'
-import { Badge, Button, Card, EmptyState, PageHeader, ProgressBar, StatTile } from '../../../ui'
+import { useEffect, useRef, useState } from 'react'
+import { Badge, Button, Card, Disclosure, EmptyState, Icon, PageHeader, ProgressBar, StatTile } from '../../../ui'
 import { Rich } from '../quiz/QuestionView'
 import { byType, byUnit, mockTrend, rateBy, topWrong, weakTopics, type MockPoint } from '../stats/selectors'
 
@@ -23,11 +24,12 @@ function Bars({ title, rows }: { title: string; rows: { label: string; seen: num
       {rows.length === 0 ? (
         <p className="text-sm text-ink-soft">아직 푼 문제가 없어요</p>
       ) : (
-        <ul className="grid gap-2">
+        <ul className="grid gap-3">
           {rows.map((r) => (
-            <li key={r.label} className="grid gap-1 sm:grid-cols-[9rem_1fr] sm:items-center sm:gap-3">
-              <span className="text-sm">{r.label}</span>
-              <ProgressBar value={r.correct} max={r.seen} label={`${r.label} 정답 수`} showValue tone={r.rate >= examMeta.passScore ? 'mint' : 'peach'} />
+            <li key={r.label} className="grid grid-cols-[6.5rem_minmax(0,1fr)_3.5rem] items-center gap-3 sm:grid-cols-[8rem_minmax(0,1fr)_3.5rem]">
+              <span className="truncate text-sm" title={r.label}>{r.label}</span>
+              <ProgressBar value={r.correct} max={r.seen} label={`${r.label} 정답 수`} tone={r.rate >= examMeta.passScore ? 'mint' : 'peach'} />
+              <span className="text-right font-pixel text-xs tabular-nums">{r.correct}/{r.seen}</span>
             </li>
           ))}
         </ul>
@@ -36,14 +38,30 @@ function Bars({ title, rows }: { title: string; rows: { label: string; seen: num
   )
 }
 
+/** 카드 폭을 재서 viewBox 를 맞춘다 (글자 크기는 그대로, 그래프만 넓어짐) */
+function useWidth() {
+  const ref = useRef<HTMLDivElement>(null)
+  const [w, setW] = useState(360)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const ro = new ResizeObserver(([e]) => setW(Math.max(240, Math.round(e.contentRect.width))))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  return [ref, w] as const
+}
+
 function Trend({ pts }: { pts: MockPoint[] }) {
-  const W = 360, H = 180, L = 30, R = 10, T = 16, B = 16
+  const [box, W] = useWidth()
+  const H = 200, L = 30, R = 10, T = 20, B = 16
   const x = (i: number) => (pts.length === 1 ? (L + W - R) / 2 : L + 24 + (i * (W - L - R - 48)) / (pts.length - 1))
   const y = (s: number) => T + ((100 - s) * (H - T - B)) / 100
   return (
     <Card>
       <h2 className="mb-2 font-pixel">모의고사 점수 추이</h2>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`모의고사 ${pts.length}회 점수 추이. 점선은 합격선 ${examMeta.passScore}점`} className="w-full max-w-lg">
+      <div ref={box}>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`모의고사 ${pts.length}회 점수 추이. 점선은 합격선 ${examMeta.passScore}점`} className="block max-w-full">
         {[0, 50, 100].map((g) => (
           <g key={g}>
             <line x1={L} x2={W - R} y1={y(g)} y2={y(g)} stroke="var(--color-ink-faint)" strokeWidth="1" />
@@ -60,21 +78,31 @@ function Trend({ pts }: { pts: MockPoint[] }) {
           </g>
         ))}
       </svg>
-      <details className="mt-2 text-sm">
-        <summary className="cursor-pointer">표로 보기</summary>
-        <table className="mt-2 w-full text-left">
+      </div>
+      <Disclosure summary="표로 보기" className="mt-3">
+        <table className="w-full text-left text-sm">
           <thead>
-            <tr><th className="py-1">회차</th><th>점수</th><th>결과</th></tr>
+            <tr><th className="py-1 font-semibold">회차</th><th className="font-semibold">점수</th><th className="font-semibold">결과</th></tr>
           </thead>
           <tbody>
-            {pts.map((p) => (
-              <tr key={p.id} className="border-t border-ink-faint">
-                <td className="py-1">{p.title}</td><td>{p.score}점</td><td>{p.score >= examMeta.passScore ? '✓ 합격' : '✗ 불합격'}</td>
-              </tr>
-            ))}
+            {pts.map((p) => {
+              const ok = p.score >= examMeta.passScore
+              return (
+                <tr key={p.id} className="border-t border-ink-faint">
+                  <td className="py-1.5">{p.title}</td>
+                  <td className="tabular-nums">{p.score}점</td>
+                  <td>
+                    <span className={`inline-flex items-center gap-1 ${ok ? 'text-good' : 'text-bad'}`}>
+                      <Icon name={ok ? 'check' : 'x'} />
+                      {ok ? '합격' : '불합격'}
+                    </span>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
-      </details>
+      </Disclosure>
     </Card>
   )
 }
@@ -108,30 +136,30 @@ export default function StatsPage() {
     <>
       <PageHeader title="학습 통계" subtitle="푼 기록에서 계산한 나의 강점과 약점이에요." back={{ to: '/written', label: '필기' }} />
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatTile label="푼 문항" value={seen} />
         <StatTile label="정답률" value={`${Math.round((correct / seen) * 100)}%`} tone="mint" />
         <StatTile label="모의고사 최고 / 평균" value={best === null ? '-' : `${best} / ${avg}`} hint={mocks.length ? `${mocks.length}회 응시` : '아직 응시 전'} tone="butter" />
         <StatTile
           label="합격선 대비"
           value={avg === null ? '-' : `${avg - examMeta.passScore >= 0 ? '+' : ''}${avg - examMeta.passScore}점`}
-          hint={avg === null ? `합격선 ${examMeta.passScore}점` : avg >= examMeta.passScore ? '✓ 평균 합격권' : '✗ 평균 합격선 아래'}
+          hint={avg === null ? `합격선 ${examMeta.passScore}점` : avg >= examMeta.passScore ? '평균 합격권' : '평균이 합격선 아래'}
           tone={avg === null ? 'paper' : avg >= examMeta.passScore ? 'good' : 'bad'}
         />
       </div>
 
-      {mocks.length > 0 && <div className="mb-6"><Trend pts={mocks} /></div>}
+      {mocks.length > 0 && <div className="mb-8"><Trend pts={mocks} /></div>}
 
-      <div className="mb-6 grid gap-4 md:grid-cols-2">
+      <div className="mb-8 grid gap-4 md:grid-cols-2">
         <Bars title="단원별 정답률" rows={units.filter((u) => unitR[u.id]).map((u) => ({ label: u.title, ...unitR[u.id] }))} />
         <Bars title="유형별 정답률" rows={Object.entries(typeR).map(([t, r]) => ({ label: QUESTION_TYPE_LABEL[t as QuestionType], ...r }))} />
       </div>
 
       <h2 className="mb-3 font-pixel text-xl">자주 틀리는 유형</h2>
       {weakTypes.length === 0 ? (
-        <p className="mb-6 text-sm text-ink-soft">유형별로 3문항 이상 풀면 가장 약한 유형을 알려 드려요.</p>
+        <p className="mb-8 text-sm text-ink-soft">유형별로 3문항 이상 풀면 가장 약한 유형을 알려 드려요.</p>
       ) : (
-        <div className="mb-6 grid gap-4 md:grid-cols-2">
+        <div className="mb-8 grid gap-4 md:grid-cols-2">
           {weakTypes.map(([t, r]) => {
             const best = Object.entries(typeTopic).filter(([k]) => k.startsWith(`${t}|`)).sort((a, b) => a[1].rate - b[1].rate)[0]
             const topicId = best?.[0].split('|')[1]
@@ -162,8 +190,11 @@ export default function StatsPage() {
             <ol className="grid gap-3">
               {weak.map((w) => (
                 <li key={w.topicId}>
-                  <p className="text-sm font-semibold">{topicTitle(w.topicId)} <span className="font-normal text-ink-soft">({w.correct}/{w.seen}, {w.rate}%)</span></p>
-                  <div className="mt-1 flex gap-2">
+                  <p className="flex items-baseline justify-between gap-2 text-sm">
+                    <span className="min-w-0 truncate font-semibold">{topicTitle(w.topicId)}</span>
+                    <span className="shrink-0 font-pixel text-xs text-ink-soft tabular-nums">{w.correct}/{w.seen} · {w.rate}%</span>
+                  </p>
+                  <div className="mt-2 flex gap-2">
                     <Button variant="secondary" size="sm" to={`/written/topic/${w.topicId}`}>노트</Button>
                     <Button variant="secondary" size="sm" to={`/written/quiz/topic/${w.topicId}`}>확인 문제</Button>
                   </div>
@@ -179,9 +210,9 @@ export default function StatsPage() {
           ) : (
             <ol className="grid gap-2">
               {wrongTop.map((w) => (
-                <li key={w.qid} className="flex items-start gap-2 text-sm">
-                  <Badge tone="peach">✗ {w.wrongCount}</Badge>
-                  <span className="line-clamp-2 flex-1"><Rich text={questionById[w.qid].stem} /></span>
+                <li key={w.qid} className="grid grid-cols-[3rem_minmax(0,1fr)] items-start gap-2 text-sm">
+                  <span className="mt-0.5 flex"><Badge tone="peach"><Icon name="x" size={12} />{w.wrongCount}</Badge></span>
+                  <span className="line-clamp-2"><Rich text={questionById[w.qid].stem} /></span>
                 </li>
               ))}
             </ol>

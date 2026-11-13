@@ -3,14 +3,23 @@ import { useNavigate } from 'react-router-dom'
 import { questionById, units } from '../../../data/written'
 import { useStore } from '../../../lib/store'
 import { QUESTION_TYPE_LABEL, type QuestionType } from '../../../types/written'
-import { Badge, Button, Card, EmptyState, PageHeader, StatTile, Tabs } from '../../../ui'
+import { Badge, Button, Card, ChipGroup, EmptyState, Icon, PageHeader, Select, StatTile, Tabs } from '../../../ui'
 import { QuestionView, Rich } from '../quiz/QuestionView'
 
 type Tab = 'active' | 'cleared'
 type Sort = 'count' | 'recent'
 
-const SELECT = 'min-h-9 rounded-pixel border-2 border-ink bg-paper px-2 text-sm'
+const UNIT_OPTS = [{ value: '', label: '전체 단원' }, ...units.map((u) => ({ value: u.id, label: `${u.order}. ${u.title}` }))]
+const TYPE_OPTS = [{ value: '', label: '전체 유형' }, ...Object.entries(QUESTION_TYPE_LABEL).map(([value, label]) => ({ value, label }))]
+const SORT_OPTS: { value: Sort; label: string }[] = [
+  { value: 'count', label: '많이 틀린 순' },
+  { value: 'recent', label: '최근 순' },
+]
 const fmt = (t: number) => new Date(t).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
+const fmtShort = (t: number) => {
+  const d = new Date(t)
+  return `${d.getMonth() + 1}/${d.getDate()}`
+}
 
 export default function WrongNotePage() {
   const navigate = useNavigate()
@@ -45,10 +54,10 @@ export default function WrongNotePage() {
     <>
       <PageHeader title="오답노트" subtitle="틀린 문제만 모아 두었어요. 다시 풀어서 맞히면 '극복함'으로 넘어갑니다." back={{ to: '/written', label: '필기' }} />
 
-      <div className="mb-8 grid gap-4 md:grid-cols-[1.4fr_1fr]">
+      <div className="mb-8 grid gap-4 md:grid-cols-[minmax(0,1fr)_14rem]">
         <Card tone="lavender">
-          <h2 className="font-pixel text-lg">{retry ? `현재 ${retry.round}회차 · 남은 ${retry.queue.length}문항` : '틀린 문제만 다시 풀기'}</h2>
-          <p className="mt-1 text-sm">
+          <h2 className="font-pixel text-xl">{retry ? `현재 ${retry.round}회차 · 남은 ${retry.queue.length}문항` : '틀린 문제만 다시 풀기'}</h2>
+          <p className="mt-2 text-sm leading-relaxed">
             {retry
               ? '회차마다 또 틀린 문제만 남아요. 모두 맞히면 올클리어!'
               : activeN
@@ -56,9 +65,9 @@ export default function WrongNotePage() {
                 : '복습할 오답이 없어요. 문제를 풀다 틀리면 여기에 쌓입니다.'}
           </p>
           {retry && retry.rounds.length > 0 && (
-            <ul className="mt-2 flex flex-wrap gap-2">
+            <ul aria-label="지난 회차" className="mt-3 flex flex-wrap gap-2">
               {retry.rounds.map((r) => (
-                <li key={r.round}>
+                <li key={r.round} className="flex">
                   <Badge tone="paper">
                     {r.round}회차 {r.correct}/{r.total}
                   </Badge>
@@ -66,13 +75,14 @@ export default function WrongNotePage() {
               ))}
             </ul>
           )}
-          <div className="mt-3">
-            <Button onClick={start} disabled={remain === 0}>
+          <div className="mt-4">
+            <Button onClick={start} disabled={remain === 0} className="w-full sm:w-auto">
+              <Icon name={retry ? 'play' : 'refresh'} />
               {retry ? `${retry.round}회차 이어서 풀기` : '틀린 문제만 다시 풀기'}
             </Button>
           </div>
         </Card>
-        <div className="grid grid-cols-2 content-start gap-3">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-1">
           <StatTile label="복습 중" value={activeN} tone="peach" />
           <StatTile label="극복함" value={clearedN} tone="mint" />
         </div>
@@ -80,12 +90,15 @@ export default function WrongNotePage() {
 
       {history.length > 0 && (
         <section aria-label="지난 다시 풀기 기록" className="mb-8">
-          <h2 className="mb-2 font-pixel text-lg">지난 올클리어 기록</h2>
+          <h2 className="mb-3 font-pixel text-lg">지난 올클리어 기록</h2>
           <ul className="grid gap-2 sm:grid-cols-2">
             {[...history].reverse().map((h) => (
-              <li key={h.clearedAt} className="rounded-pixel border-2 border-ink bg-mint p-3">
-                <span className="font-pixel text-good">✓ {h.rounds}회차 만에 올클리어</span>
-                <span className="block text-sm">
+              <li key={h.clearedAt} className="rounded-pixel border-2 border-ink bg-mint px-4 py-3 shadow-pixel-sm">
+                <span className="flex items-center gap-2 font-pixel text-good">
+                  <Icon name="check" />
+                  {h.rounds}회차 만에 올클리어
+                </span>
+                <span className="mt-1 block text-sm">
                   {h.total}문항 · {fmt(h.clearedAt)}
                 </span>
               </li>
@@ -106,36 +119,10 @@ export default function WrongNotePage() {
           { id: 'cleared', label: `극복함 ${clearedN}` },
         ]}
       />
-      <div className="my-4 flex flex-wrap gap-3 text-sm">
-        <label className="flex items-center gap-2">
-          단원
-          <select className={SELECT} value={unitId} onChange={(e) => setUnitId(e.target.value)}>
-            <option value="">전체</option>
-            {units.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.title}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex items-center gap-2">
-          유형
-          <select className={SELECT} value={type} onChange={(e) => setType(e.target.value)}>
-            <option value="">전체</option>
-            {Object.entries(QUESTION_TYPE_LABEL).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex items-center gap-2">
-          정렬
-          <select className={SELECT} value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
-            <option value="count">많이 틀린 순</option>
-            <option value="recent">최근 순</option>
-          </select>
-        </label>
+      <div className="my-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+        <Select label="단원" hideLabel value={unitId} onChange={setUnitId} options={UNIT_OPTS} className="min-w-0 sm:w-56" />
+        <Select label="유형" hideLabel value={type} onChange={setType} options={TYPE_OPTS} className="min-w-0 sm:w-40" />
+        <ChipGroup label="정렬" hideLabel value={sort} onChange={setSort} options={SORT_OPTS} className="col-span-2 sm:ml-auto" />
       </div>
 
       <div id={`tabpanel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`}>
@@ -146,35 +133,48 @@ export default function WrongNotePage() {
             action={<Button to="/written/tests">단원평가 풀기</Button>}
           />
         ) : (
-          <ul className="grid gap-3">
-            {rows.map(({ w, q }) => {
-              const unit = units.find((u) => u.id === q.unitId)
-              const isOpen = open === q.id
-              return (
-                <li key={q.id}>
-                  <Card>
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <Badge tone="peach">✗ {w.wrongCount}번 틀림</Badge>
-                      <Badge tone="lavender">{QUESTION_TYPE_LABEL[q.type as QuestionType]}</Badge>
-                      <span className="text-sm text-ink-soft">{unit?.title} · {fmt(w.lastWrongAt)}</span>
-                    </div>
-                    {isOpen ? (
-                      <QuestionView q={q} no={1} picked={w.lastPicked} reveal />
-                    ) : (
-                      <p className="leading-relaxed font-semibold">
-                        <Rich text={q.stem} />
-                      </p>
+          <>
+            <p className="mb-2 text-sm text-ink-soft">{rows.length}문항 · 행을 누르면 보기와 해설이 펼쳐져요</p>
+            <ul className="overflow-hidden rounded-pixel border-2 border-ink bg-paper shadow-pixel">
+              {rows.map(({ w, q }) => {
+                const unit = units.find((u) => u.id === q.unitId)
+                const isOpen = open === q.id
+                return (
+                  <li key={q.id} className="border-ink-faint not-first:border-t-2">
+                    <button
+                      type="button"
+                      aria-expanded={isOpen}
+                      aria-controls={`wn-${q.id}`}
+                      onClick={() => setOpen(isOpen ? null : q.id)}
+                      className={`grid w-full grid-cols-[3.5rem_minmax(0,1fr)_auto] items-start gap-3 px-3 py-3 text-left hover:bg-butter focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-ink active:bg-paper-deep sm:px-4 ${isOpen ? 'bg-paper-deep' : ''}`}
+                    >
+                      <span className={`flex h-14 flex-col items-center justify-center rounded-pixel border-2 border-ink ${w.cleared ? 'bg-mint' : 'bg-peach'}`}>
+                        <span className="font-pixel text-xl leading-none tabular-nums">{w.wrongCount}</span>
+                        <span className="mt-1 text-[11px] leading-none">번 틀림</span>
+                      </span>
+                      <span className="min-w-0">
+                        <span className="flex items-center gap-2">
+                          <Badge tone="lavender">{QUESTION_TYPE_LABEL[q.type as QuestionType]}</Badge>
+                          <span className="ml-auto truncate text-xs text-ink-soft">
+                            {unit?.title} · {fmtShort(w.lastWrongAt)}
+                          </span>
+                        </span>
+                        <span id={`stem-${q.id}`} className={`mt-1.5 block leading-relaxed font-semibold ${isOpen ? '' : 'line-clamp-2'}`}>
+                          <Rich text={q.stem} />
+                        </span>
+                      </span>
+                      <Icon name="chevron-down" className={`mt-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {isOpen && (
+                      <div id={`wn-${q.id}`} className="border-t-2 border-ink-faint px-3 pt-3 pb-4 sm:pr-4 sm:pl-[5.25rem]">
+                        <QuestionView q={q} no={1} picked={w.lastPicked} reveal bare />
+                      </div>
                     )}
-                    <div className="mt-3">
-                      <Button variant="secondary" size="sm" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : q.id)}>
-                        {isOpen ? '접기' : '정답·해설 보기'}
-                      </Button>
-                    </div>
-                  </Card>
-                </li>
-              )
-            })}
-          </ul>
+                  </li>
+                )
+              })}
+            </ul>
+          </>
         )}
       </div>
     </>

@@ -1,4 +1,4 @@
-import { CocktailArt } from '../../../art'
+import { CocktailArt, ToolArt } from '../../../art'
 import { practicalMeta } from '../../../data/practical'
 import { guideCategories } from '../../../data/practical/guide'
 import { Card, PageHeader, StatTile } from '../../../ui'
@@ -20,15 +20,18 @@ export default function PracticalHubPage() {
 
       <div className="mb-8 grid gap-4 md:grid-cols-2">
         <Card to="/practical/recipes" tone="peach" className="flex items-center gap-4">
-          <CocktailArt recipeId="manhattan" size={110} />
+          <span className="flex h-[110px] w-[110px] shrink-0 items-center justify-center"><CocktailArt recipeId="manhattan" size={110} /></span>
           <div>
             <p className="font-pixel text-xl">레시피 카드</p>
             <p className="mt-1 text-sm">{practicalMeta.recipeCount}종을 카드로 보고, 암기 모드로 뒤집어 확인</p>
           </div>
         </Card>
-        <Card to="/practical/game" tone="lavender" className="flex flex-col justify-center">
-          <p className="font-pixel text-xl">바텐더 게임</p>
-          <p className="mt-1 text-sm">손님 주문대로 직접 만들어 점수를 받아요</p>
+        <Card to="/practical/game" tone="lavender" className="flex items-center gap-4">
+          <span className="flex h-[110px] w-[110px] shrink-0 items-center justify-center"><ToolArt toolId="cobbler-shaker" size={96} /></span>
+          <div>
+            <p className="font-pixel text-xl">바텐더 게임</p>
+            <p className="mt-1 text-sm">손님 주문대로 직접 만들어 점수를 받아요</p>
+          </div>
         </Card>
       </div>
 

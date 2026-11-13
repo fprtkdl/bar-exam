@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { examMeta } from '../../../data/written'
 import { useStore } from '../../../lib/store'
 import type { ChoiceIndex } from '../../../types/written'
-import { Button, Card, Modal, PageHeader } from '../../../ui'
+import { Button, Card, Icon, Modal, PageHeader, ProgressBar } from '../../../ui'
 import type { ResolvedQuiz } from './build'
-import { QuestionView } from './QuestionView'
+import { KeyHint, QuestionView, useQuizKeys } from './QuestionView'
 
 type Saved = { startedAt: number; picks: (ChoiceIndex | null)[]; flags: boolean[] }
 
@@ -108,6 +108,11 @@ export function MockExam({ refId, quiz }: { refId: string; quiz: ResolvedQuiz })
     setPaletteOpen(false)
   }
   const urgent = left < 5 * 60_000
+  useQuizKeys({
+    pick,
+    next: () => (idx < n - 1 ? go(idx + 1) : setConfirm(true)),
+    prev: () => idx > 0 && go(idx - 1),
+  })
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-start lg:gap-6">
@@ -118,14 +123,20 @@ export function MockExam({ refId, quiz }: { refId: string; quiz: ResolvedQuiz })
       >
         <div className="flex items-center justify-between gap-3">
           <div className={`rounded-pixel border-2 border-ink px-2 py-1 ${urgent ? 'bg-bad-soft' : 'bg-butter'}`}>
-            <p className="text-xs text-ink-soft">{urgent ? '⚠ 곧 종료' : '남은 시간'}</p>
-            <p className="font-pixel text-2xl tabular-nums" role="timer" aria-label={`남은 시간 ${mmss(left)}`}>
+            <p className={`flex items-center gap-1 text-xs ${urgent ? 'font-semibold text-bad' : 'text-ink-soft'}`}>
+              <Icon name="clock" size={12} />
+              {urgent ? '5분 안 남음' : '남은 시간'}
+            </p>
+            <p className={`font-pixel text-2xl tabular-nums ${urgent ? 'text-bad' : ''}`} role="timer" aria-label={`남은 시간 ${mmss(left)}`}>
               {mmss(left)}
             </p>
           </div>
-          <p className="font-pixel text-sm">
-            응답 {answered}/{n}
-          </p>
+          <div className="min-w-0 flex-1">
+            <p className="mb-1 font-pixel text-sm tabular-nums">
+              응답 {answered}/{n}
+            </p>
+            <ProgressBar value={answered} max={n} label="응답한 문항" tone="sky" />
+          </div>
           <Button
             variant="secondary"
             size="sm"
@@ -134,7 +145,8 @@ export function MockExam({ refId, quiz }: { refId: string; quiz: ResolvedQuiz })
             aria-controls="mock-palette"
             onClick={() => setPaletteOpen((o) => !o)}
           >
-            번호판 {paletteOpen ? '▲' : '▼'}
+            번호판
+            <Icon name="chevron-down" className={`transition-transform ${paletteOpen ? 'rotate-180' : ''}`} />
           </Button>
         </div>
 
@@ -150,14 +162,14 @@ export function MockExam({ refId, quiz }: { refId: string; quiz: ResolvedQuiz })
                     onClick={() => go(i)}
                     aria-current={i === idx ? 'step' : undefined}
                     aria-label={`${i + 1}번, ${a ? '응답함' : '미응답'}${f ? ', 나중에 볼 문제' : ''}`}
-                    className={`relative h-9 w-full rounded-[3px] border-2 font-pixel text-xs tabular-nums ${
-                      a ? 'bg-sky' : 'bg-paper'
+                    className={`relative h-9 w-full rounded-[3px] border-2 font-pixel text-xs tabular-nums hover:border-ink focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-ink active:translate-y-px ${
+                      a ? 'bg-sky' : 'bg-paper hover:bg-butter'
                     } ${i === idx ? 'border-ink outline-2 outline-offset-1 outline-ink' : 'border-ink-faint'}`}
                   >
                     {i + 1}
                     {f && (
-                      <span aria-hidden className="absolute -top-1.5 -right-1 text-[10px] leading-none">
-                        ★
+                      <span aria-hidden className="absolute -top-2 -right-1.5 rounded-[2px] bg-paper text-bad">
+                        <Icon name="flag" size={12} />
                       </span>
                     )}
                   </button>
@@ -165,7 +177,7 @@ export function MockExam({ refId, quiz }: { refId: string; quiz: ResolvedQuiz })
               )
             })}
           </ol>
-          <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-soft">
+          <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-soft">
             <span>
               <span aria-hidden className="mr-1 inline-block h-3 w-3 border-2 border-ink-faint bg-sky align-middle" />
               응답
@@ -174,7 +186,10 @@ export function MockExam({ refId, quiz }: { refId: string; quiz: ResolvedQuiz })
               <span aria-hidden className="mr-1 inline-block h-3 w-3 border-2 border-ink-faint bg-paper align-middle" />
               미응답
             </span>
-            <span>★ 나중에 볼 문제 {flagged}</span>
+            <span className="inline-flex items-center gap-1">
+              <Icon name="flag" size={12} className="text-bad" />
+              나중에 볼 문제 {flagged}
+            </span>
           </p>
           <Button className="mt-3 w-full" onClick={() => setConfirm(true)}>
             답안 제출
@@ -185,21 +200,29 @@ export function MockExam({ refId, quiz }: { refId: string; quiz: ResolvedQuiz })
         </div>
       </aside>
 
-      <section aria-label={quiz.title} className="min-w-0 lg:col-start-1 lg:row-start-1">
+      <section aria-label={quiz.title} className="min-w-0 pb-20 sm:pb-0 lg:col-start-1 lg:row-start-1">
         <PageHeader title={quiz.title} subtitle={`${n}문항 · ${examMeta.minutes}분 · ${examMeta.passScore}점 이상 합격`} />
         <Card>
           <QuestionView key={quiz.questions[idx].id} q={quiz.questions[idx]} no={idx + 1} picked={saved.picks[idx]} reveal={false} onPick={pick} />
         </Card>
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="mt-3 flex justify-end">
+          <KeyHint prev />
+        </div>
+        {/* 모바일: 하단 탭 바 바로 위에 고정 */}
+        <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-10 grid grid-cols-[auto_1fr_auto] items-center gap-2 border-t-2 border-ink bg-paper px-4 py-2 sm:static sm:mt-3 sm:border-0 sm:bg-transparent sm:p-0">
           <Button variant="secondary" disabled={idx === 0} onClick={() => go(idx - 1)}>
-            ‹ 이전
+            <Icon name="chevron-left" />
+            이전
           </Button>
-          <Button variant="ghost" aria-pressed={saved.flags[idx]} onClick={toggleFlag}>
-            {saved.flags[idx] ? '★ 표시 해제' : '☆ 나중에 볼 문제'}
+          <Button variant="ghost" className="justify-self-center" aria-pressed={saved.flags[idx]} onClick={toggleFlag}>
+            <Icon name="flag" className={saved.flags[idx] ? 'text-bad' : ''} />
+            <span className="sm:hidden">{saved.flags[idx] ? '표시됨' : '나중에'}</span>
+            <span className="hidden sm:inline">{saved.flags[idx] ? '나중에 볼 문제 해제' : '나중에 볼 문제'}</span>
           </Button>
           {idx < n - 1 ? (
             <Button variant="secondary" onClick={() => go(idx + 1)}>
-              다음 ›
+              다음
+              <Icon name="chevron-right" />
             </Button>
           ) : (
             <Button onClick={() => setConfirm(true)}>답안 제출</Button>
@@ -224,7 +247,12 @@ export function MockExam({ refId, quiz }: { refId: string; quiz: ResolvedQuiz })
           {n}문항 중 {answered}문항에 답했습니다.
           {n - answered > 0 && ` 미응답 ${n - answered}문항은 오답 처리됩니다.`}
         </p>
-        {flagged > 0 && <p className="mt-2">★ 나중에 볼 문제로 표시한 문항이 {flagged}개 있습니다.</p>}
+        {flagged > 0 && (
+          <p className="mt-2 flex items-center gap-2">
+            <Icon name="flag" className="text-bad" />
+            나중에 볼 문제로 표시한 문항이 {flagged}개 있습니다.
+          </p>
+        )}
         <p className="mt-2 text-sm text-ink-soft">제출하면 수정할 수 없고, 해설은 결과 화면에서 볼 수 있습니다.</p>
       </Modal>
 

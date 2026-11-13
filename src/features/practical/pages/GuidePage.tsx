@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { BottleArt, GarnishArt, GlassArt, IceArt, ToolArt } from '../../../art'
 import { guideCategories } from '../../../data/practical/guide'
 import type { GuideEntry } from '../../../types/practical'
-import { Badge, Card, EmptyState, PageHeader } from '../../../ui'
+import { Badge, Card, ChipGroup, EmptyState, Icon, PageHeader, Select } from '../../../ui'
 import type { IceType } from '../../../types/practical'
 
 function EntryArt({ art }: { art: NonNullable<GuideEntry['art']> }) {
@@ -15,8 +15,14 @@ function EntryArt({ art }: { art: NonNullable<GuideEntry['art']> }) {
   return <IceArt type={id as IceType} size={88} />
 }
 
+/** 분류 이동 링크 — ChipGroup 과 같은 모양·상태 */
 const chip = (on: boolean) =>
-  `inline-flex min-h-9 items-center rounded-pixel border-2 border-ink px-3 font-pixel text-sm ${on ? 'bg-ink text-paper' : 'bg-paper hover:bg-butter'}`
+  `inline-flex min-h-11 items-center rounded-pixel border-2 border-ink px-3 font-pixel text-sm leading-none select-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink sm:min-h-9 ${
+    on
+      ? 'translate-x-0.5 translate-y-0.5 bg-ink text-paper'
+      : 'bg-paper text-ink shadow-pixel-sm hover:bg-butter active:translate-x-0.5 active:translate-y-0.5 active:shadow-none'
+  }`
+const CAPTION = 'mt-3 font-pixel text-xs text-ink-soft'
 
 export default function GuidePage() {
   const { categoryId } = useParams()
@@ -25,6 +31,10 @@ export default function GuidePage() {
   if (!cat) return <EmptyState title="없는 분류예요" />
   const groups = [...new Set(cat.entries.map((e) => e.group))]
   const shown = cat.entries.filter((e) => !group || e.group === group)
+  const groupOptions = [
+    { value: '', label: `전체 ${cat.entries.length}` },
+    ...groups.map((g) => ({ value: g, label: `${g} ${cat.entries.filter((e) => e.group === g).length}` })),
+  ]
 
   return (
     <>
@@ -37,11 +47,12 @@ export default function GuidePage() {
         ))}
       </nav>
       {groups.length > 1 && (
-        <div role="group" aria-label="소분류" className="mb-5 flex flex-wrap gap-2">
-          <button type="button" aria-pressed={!group} onClick={() => setGroup('')} className={chip(!group)}>전체 {cat.entries.length}</button>
-          {groups.map((g) => (
-            <button key={g} type="button" aria-pressed={group === g} onClick={() => setGroup(g)} className={chip(group === g)}>{g}</button>
-          ))}
+        <div className="mb-6">
+          {groups.length + 1 > 5 ? (
+            <Select label="소분류" value={group} onChange={setGroup} options={groupOptions} className="w-full sm:w-72" />
+          ) : (
+            <ChipGroup label="소분류" value={group} onChange={setGroup} options={groupOptions} />
+          )}
         </div>
       )}
       <ul className="grid gap-4 md:grid-cols-2">
@@ -49,7 +60,7 @@ export default function GuidePage() {
           <li key={e.id}>
             <Card className="flex h-full gap-4">
               {e.art && (
-                <div className="flex w-24 shrink-0 items-start justify-center rounded-pixel border-2 border-ink bg-paper-deep p-2 self-start">
+                <div className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-pixel border-2 border-ink bg-paper-deep">
                   <EntryArt art={e.art} />
                 </div>
               )}
@@ -59,12 +70,23 @@ export default function GuidePage() {
                 <div className="mt-1"><Badge tone="lavender">{e.group}</Badge></div>
                 <p className="mt-2">{e.summary}</p>
                 {e.features.length > 0 && (
-                  <ul className="mt-2 list-disc space-y-0.5 pl-5 text-sm">{e.features.map((f, i) => <li key={i}>{f}</li>)}</ul>
+                  <>
+                    <p className={CAPTION}>특징</p>
+                    <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">{e.features.map((f, i) => <li key={i}>{f}</li>)}</ul>
+                  </>
                 )}
                 {e.usage.length > 0 && (
-                  <ul className="mt-2 list-disc space-y-0.5 pl-5 text-sm">{e.usage.map((f, i) => <li key={i}>{f}</li>)}</ul>
+                  <>
+                    <p className={CAPTION}>사용법</p>
+                    <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">{e.usage.map((f, i) => <li key={i}>{f}</li>)}</ul>
+                  </>
                 )}
-                {e.examTip && <p className="mt-3 rounded-pixel border-2 border-ink bg-butter p-2 text-sm"><b>시험 팁</b> {e.examTip}</p>}
+                {e.examTip && (
+                  <div className="mt-4 flex gap-2 rounded-pixel border-2 border-ink bg-butter p-3 text-sm">
+                    <Icon name="tip" className="mt-0.5 shrink-0" />
+                    <p><b className="font-pixel font-normal">시험 팁</b> {e.examTip}</p>
+                  </div>
+                )}
               </div>
             </Card>
           </li>

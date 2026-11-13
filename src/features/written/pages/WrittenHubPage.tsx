@@ -1,7 +1,7 @@
 import { examMeta, questions, units } from '../../../data/written'
 import { verifiedPeriod } from '../../../data/written/examMeta'
 import { useStore } from '../../../lib/store'
-import { Badge, Card, PageHeader, ProgressBar } from '../../../ui'
+import { Badge, Card, Icon, PageHeader, ProgressBar } from '../../../ui'
 import type { Tone } from '../../../ui'
 import { tally, toScore } from '../quiz/build'
 
@@ -23,7 +23,10 @@ export default function WrittenHubPage() {
       <nav aria-label="필기 바로가기" className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-4">
         {SHORTCUTS.map((s) => (
           <Card key={s.to} to={s.to} tone={s.tone}>
-            <p className="font-pixel">{s.title}</p>
+            <p className="flex items-center justify-between gap-2 font-pixel">
+              {s.title}
+              <Icon name="chevron-right" />
+            </p>
             <p className="mt-1 text-sm">{s.desc}</p>
           </Card>
         ))}
@@ -48,26 +51,25 @@ export default function WrittenHubPage() {
           const a = acc[u.id]
           return (
             <li key={u.id}>
-              <Card to={`/written/unit/${u.id}`} className="h-full">
+              <Card to={`/written/unit/${u.id}`} className="flex h-full flex-col">
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="font-pixel text-lg">
                     {u.order}. {u.title}
                   </h3>
-                  <Badge tone="butter">출제 {u.examWeight}문항</Badge>
+                  <span className="flex shrink-0 whitespace-nowrap">
+                    <Badge tone="butter">출제 {u.examWeight}문항</Badge>
+                  </span>
                 </div>
-                <p className="mt-1 text-sm text-ink-soft">{u.description}</p>
-                <p className="mt-3 text-sm">
-                  토픽 {u.topics.length}개 · 문항 {qn}개
-                </p>
-                <div className="mt-2">
-                  {a ? (
-                    <>
-                      <p className="mb-1 text-sm">내 정답률 {toScore(a.correct, a.total)}%</p>
-                      <ProgressBar value={a.correct} max={a.total} label={`${u.title} 정답률`} />
-                    </>
-                  ) : (
-                    <p className="text-sm text-ink-soft">아직 푼 문제가 없어요</p>
-                  )}
+                <p className="mt-1 line-clamp-2 text-sm text-ink-soft">{u.description}</p>
+                {/* 모든 카드가 같은 두 줄(메타·정답률 막대)로 끝나게 */}
+                <div className="mt-auto pt-4">
+                  <p className="mb-2 flex justify-between gap-2 text-sm">
+                    <span>
+                      토픽 {u.topics.length}개 · 문항 {qn}개
+                    </span>
+                    <span className={`tabular-nums ${a ? 'font-semibold' : 'text-ink-soft'}`}>{a ? `정답률 ${toScore(a.correct, a.total)}%` : '아직 안 풀었어요'}</span>
+                  </p>
+                  <ProgressBar value={a?.correct ?? 0} max={a?.total ?? 1} label={`${u.title} 정답률`} />
                 </div>
               </Card>
             </li>

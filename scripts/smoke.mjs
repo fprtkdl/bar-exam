@@ -80,8 +80,8 @@ await step('토픽 노트 → 확인 문제(3개 틀림) → 결과', async () =
 await step('오답노트: 틀린 3문항이 틀린 횟수와 함께 보임', async () => {
   await page.getByRole('link', { name: '오답노트로' }).first().click()
   await page.waitForURL(/written\/wrong/)
-  await page.getByText('✗ 1번 틀림').first().waitFor()
-  expect((await page.getByText('✗ 1번 틀림').count()) === 3, '“1번 틀림” 배지 3개가 아님')
+  await page.getByText('1번 틀림', { exact: true }).first().waitFor()
+  expect((await page.getByText('1번 틀림', { exact: true }).count()) === 3, '“1번 틀림” 배지 3개가 아님')
 })
 
 await step('틀린 문제만 다시 풀기 1회차(1개만 맞힘) → 2회차 표시', async () => {
@@ -92,7 +92,7 @@ await step('틀린 문제만 다시 풀기 1회차(1개만 맞힘) → 2회차 �
   await page.getByText('현재 2회차').waitFor()
   const t = await text('main')
   expect(t.includes('현재 2회차 · 남은 2문항'), '2회차·남은 2문항 표시 없음')
-  expect((await page.getByText('✗ 2번 틀림').count()) === 2, '“2번 틀림” 2개가 아님')
+  expect((await page.getByText('2번 틀림', { exact: true }).count()) === 2, '“2번 틀림” 2개가 아님')
   await shot('wrong-round2-1280')
   await page.setViewportSize({ width: 390, height: 844 })
   await shot('wrong-round2-390')
@@ -140,7 +140,7 @@ await step('모의고사 1회: 30문항 → 새로고침 후 답안 유지 → 6
   await page.getByText('문항별 풀이').waitFor()
   solved += 60
   const t = await text('main')
-  expect(t.includes('75점') && t.includes('✓ 합격'), `점수·합격 표시 이상: ${t.slice(0, 120)}`)
+  expect(t.includes('75점') && /(^|[^불])합격/.test(t) && !t.includes('불합격'), `점수·합격 표시 이상: ${t.slice(0, 120)}`)
 })
 
 await step('통계: 단원별·유형별 수치 반영', async () => {
@@ -196,7 +196,7 @@ await step('설정: 내보내기 → 초기화 → 가져오기 복원', async (
   const n = () => page.evaluate(() => JSON.parse(localStorage.getItem('bar-exam:v1')).state.attempts.length)
   expect((await n()) === 0, '초기화 안 됨')
   await page.locator('#import-file').setInputFiles(file)
-  await page.getByText('✓ 기록을 가져왔어요.').waitFor()
+  await page.getByRole('status').getByText('기록을 가져왔어요.').waitFor()
   expect((await n()) === 5, `복원된 시도 수 ${await n()}`)
 })
 
