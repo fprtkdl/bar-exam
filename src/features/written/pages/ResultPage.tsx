@@ -5,7 +5,7 @@ import { useStore } from '../../../lib/store'
 import { QUESTION_TYPE_LABEL, type QuestionType } from '../../../types/written'
 import { Badge, Button, Card, EmptyState, Icon, PageHeader, ProgressBar, StatTile } from '../../../ui'
 import { isPass, tally, toScore } from '../quiz/build'
-import { QuestionRow } from '../quiz/QuestionRow'
+import { QuestionRow, ROW_CLASS } from '../quiz/QuestionRow'
 import { QuestionView } from '../quiz/QuestionView'
 
 function Bars({ title, rows }: { title: string; rows: { label: string; correct: number; total: number }[] }) {
@@ -29,9 +29,14 @@ function Bars({ title, rows }: { title: string; rows: { label: string; correct: 
 
 export default function ResultPage() {
   const { attemptId } = useParams()
+  // key: 다른 시도로 바뀌면 펼침·필터 상태를 새로 시작
+  return <ResultView key={attemptId} attemptId={attemptId} />
+}
+
+function ResultView({ attemptId }: { attemptId?: string }) {
   const attempt = useStore((s) => s.attempts.find((a) => a.id === attemptId))
   const [onlyWrong, setOnlyWrong] = useState(false)
-  const [open, setOpen] = useState<string | null>(null)
+  const [open, setOpen] = useState<Set<number>>(new Set())
 
   if (!attempt) {
     return (
@@ -48,6 +53,8 @@ export default function ResultPage() {
   const byUnit = tally(attempt.answers, (q) => q.unitId)
   const byType = tally(attempt.answers, (q) => q.type)
   const shown = attempt.answers.map((a, i) => ({ a, no: i + 1 })).filter(({ a }) => !onlyWrong || !a.correct)
+  const openable = shown.filter(({ a }) => questionById[a.qid]).map(({ no }) => no)
+  const allOpen = openable.length > 0 && openable.every((n) => open.has(n))
   const min = Math.floor(attempt.durationSec / 60)
 
   return (
@@ -84,36 +91,50 @@ export default function ResultPage() {
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-pixel text-xl">문항별 풀이</h2>
-        <Button variant="secondary" size="sm" aria-pressed={onlyWrong} onClick={() => setOnlyWrong((v) => !v)}>
-          {onlyWrong && <Icon name="check" />}
-          {onlyWrong ? '틀린 것만 보는 중' : '틀린 것만 보기'}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" size="sm" onClick={() => setOpen(allOpen ? new Set() : new Set(openable))}>
+            <Icon name={allOpen ? 'chevron-down' : 'chevron-right'} />
+            {allOpen ? '모두 접기' : '모두 펼치기'}
+          </Button>
+          <Button variant="secondary" size="sm" aria-pressed={onlyWrong} onClick={() => setOnlyWrong((v) => !v)}>
+            {onlyWrong && <Icon name="check" />}
+            {onlyWrong ? '틀린 것만 보는 중' : '틀린 것만 보기'}
+          </Button>
+        </div>
       </div>
       {shown.length === 0 ? (
         <EmptyState title="틀린 문항이 없어요" description="모두 맞혔습니다." />
       ) : (
-        <ul className="overflow-hidden rounded-pixel border-2 border-ink bg-paper shadow-pixel">
+        <>
+        <p className="mb-2 text-sm text-ink-soft">{shown.length}문항 · 행을 누르면 보기와 해설이 펼쳐져요</p>
+        <ol className="overflow-hidden rounded-pixel border-2 border-ink bg-paper shadow-pixel">
           {shown.map(({ a, no }) => {
             const q = questionById[a.qid]
             if (!q) {
               return (
-                <li key={a.qid} className="border-ink-faint px-4 py-3 text-ink-soft not-first:border-t-2">
+                <li key={no} className={`${ROW_CLASS} px-3 py-3 text-ink-soft sm:px-4`}>
                   <span className="font-pixel">{no}.</span> 삭제되었거나 수정된 문항입니다.
                 </li>
               )
             }
-            const isOpen = open === a.qid
+            const isOpen = open.has(no)
             return (
               <QuestionRow
-                key={a.qid}
-                id={a.qid}
+                key={no}
+                id={`result-${no}`}
                 stem={q.stem}
                 open={isOpen}
-                onToggle={() => setOpen(isOpen ? null : a.qid)}
+                onToggle={() =>
+                  setOpen((s) => {
+                    const n = new Set(s)
+                    if (!n.delete(no)) n.add(no)
+                    return n
+                  })
+                }
                 lead={
-                  <span className={`flex h-14 flex-col items-center justify-center rounded-pixel border-2 border-ink ${a.correct ? 'bg-mint text-good' : 'bg-peach text-bad'}`}>
+                  <span className={`flex h-14 flex-col items-center justify-center rounded-pixel border-2 border-ink ${a.correct ? 'bg-good-soft text-good' : 'bg-bad-soft text-bad'}`}>
                     <span className="font-pixel text-lg leading-none text-ink tabular-nums">{no}</span>
-                    <span className="mt-1 flex items-center gap-0.5 text-[11px] leading-none">
+                    <span className="mt-1 flex items-center gap-0.5 text-xs leading-none">
                       <Icon name={a.correct ? 'check' : 'x'} size={12} />
                       {a.correct ? '정답' : '오답'}
                     </span>
@@ -121,11 +142,12 @@ export default function ResultPage() {
                 }
                 top={<Badge tone="lavender">{QUESTION_TYPE_LABEL[q.type as QuestionType]}</Badge>}
               >
-                <QuestionView q={q} no={no} picked={a.picked} reveal bare />
+                <QuestionView q={q} stemId={`result-${no}-stem`} picked={a.picked} reveal bare />
               </QuestionRow>
             )
           })}
-        </ul>
+        </ol>
+        </>
       )}
     </>
   )

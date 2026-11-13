@@ -148,12 +148,12 @@ export default function StatsPage() {
               `합격선 ${examMeta.passScore}점`
             ) : avg >= examMeta.passScore ? (
               <>
-                <Icon name="check" size={12} />
+                <Icon name="check" size={12} className="mr-1 inline align-[-1px]" />
                 평균 합격권
               </>
             ) : (
               <>
-                <Icon name="x" size={12} />
+                <Icon name="x" size={12} className="mr-1 inline align-[-1px]" />
                 평균이 합격선 아래
               </>
             )

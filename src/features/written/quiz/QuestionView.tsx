@@ -74,27 +74,27 @@ export function KeyHint({ prev = false }: { prev?: boolean }) {
 
 type Props = {
   q: Question
-  /** 화면에 보이는 번호 (1부터) */
-  no: number
   picked: ChoiceIndex | null
   /** true 면 정답·해설 공개, 선택 불가 */
   reveal: boolean
   onPick?: (c: ChoiceIndex) => void
-  /** 오답노트처럼 바깥에 이미 문제가 보일 때: 번호·유형·문제 줄을 생략 (문제 요소 id 는 바깥이 `stem-<id>` 로 준다) */
+  /** 오답노트처럼 바깥에 이미 문제가 보일 때: 번호·유형·문제 줄을 생략 (문제 요소 id 는 바깥이 stemId 로 준다) */
   bare?: boolean
-}
+  /** 문제 요소 id (기본 `stem-<qid>`). bare 일 때 바깥이 같은 id 를 준다 */
+  stemId?: string
+} & ({ bare: true; no?: number } | { bare?: false; /** 화면에 보이는 번호 (1부터) */ no: number })
 
-export function QuestionView({ q, no, picked, reveal, onPick, bare = false }: Props) {
+export function QuestionView({ q, no, picked, reveal, onPick, bare = false, stemId = `stem-${q.id}` }: Props) {
   const right = picked === q.answer
   return (
-    <article aria-labelledby={`stem-${q.id}`}>
+    <article aria-labelledby={stemId}>
       {!bare && (
         <>
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <span className="font-pixel text-lg">{no}.</span>
             <Badge tone="lavender">{QUESTION_TYPE_LABEL[q.type]}</Badge>
           </div>
-          <p id={`stem-${q.id}`} className="text-lg leading-relaxed font-semibold">
+          <p id={stemId} className="text-lg leading-relaxed font-semibold">
             <Rich text={q.stem} />
           </p>
         </>

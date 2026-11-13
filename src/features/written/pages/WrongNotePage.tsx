@@ -143,7 +143,7 @@ export default function WrongNotePage() {
                 return (
                   <QuestionRow
                     key={q.id}
-                    id={q.id}
+                    id={`wn-${q.id}`}
                     stem={q.stem}
                     open={isOpen}
                     onToggle={() => setOpen(isOpen ? null : q.id)}
@@ -162,7 +162,7 @@ export default function WrongNotePage() {
                       </>
                     }
                   >
-                    <QuestionView q={q} no={1} picked={w.lastPicked} reveal bare />
+                    <QuestionView q={q} stemId={`wn-${q.id}-stem`} picked={w.lastPicked} reveal bare />
                   </QuestionRow>
                 )
               })}

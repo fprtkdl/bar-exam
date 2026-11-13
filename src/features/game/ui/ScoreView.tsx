@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { CocktailArt, GlassArt } from '../../../art'
 import { glassById, garnishById } from '../../../data/practical'
 import type { Recipe } from '../../../types/practical'
-import { Badge } from '../../../ui'
+import { Arrows, Badge, Icon } from '../../../ui'
 import { formatAmount, ICE_LABEL, VIA_LABEL, type GameState, type ScoreSheet } from '../engine'
 import { glassFill, ingName } from './helpers'
 
@@ -99,7 +99,9 @@ export function RecipeCard({ recipe, dark }: { recipe: Recipe; dark?: boolean })
       <p>
         <span className={soft}>가니쉬</span> {recipe.garnishIds.length ? recipe.garnishIds.map((id) => garnishById(id)?.nameKo).join(', ') : '없음'}
       </p>
-      <p className={`${soft} break-keep`}>💡 {recipe.tip}</p>
+      <p className={`${soft} break-keep`}>
+        <Icon name="tip" className="mr-1 inline align-[-3px]" /> <Arrows text={recipe.tip} />
+      </p>
     </div>
   )
 }

@@ -1,9 +1,19 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { glasses, recipes } from '../../../data/practical'
 import type { MethodId } from '../../../types/practical'
 import { Button, EmptyState, PageHeader, SearchInput, Select } from '../../../ui'
 import { RecipeCard } from '../RecipeCard'
 import { BASE_LABEL, METHOD_SHORT } from '../lib/labels'
+
+/** 캡션이 위, 컨트롤이 아래인 세로 필드 (캡션은 장식 — Select 가 aria-label 을 가진다) */
+function Field({ caption, className = '', children }: { caption: string; className?: string; children: ReactNode }) {
+  return (
+    <div className={`flex min-w-0 flex-col gap-1 ${className}`}>
+      <span aria-hidden className="font-pixel text-xs text-ink-soft">{caption}</span>
+      {children}
+    </div>
+  )
+}
 
 export default function RecipesPage() {
   const [q, setQ] = useState('')
@@ -42,11 +52,17 @@ export default function RecipesPage() {
           </Button>
         }
       />
-      <form role="search" onSubmit={(e) => e.preventDefault()} className="mb-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
-        <SearchInput label="이름 검색" placeholder="이름 검색" value={q} onChange={setQ} className="col-span-3 sm:col-span-1" />
-        <Select label="기주" hideLabel className="min-w-0" value={base} onChange={setBase} options={[{ value: '', label: '기주 전체' }, ...bases.map((b) => ({ value: b, label: BASE_LABEL[b] }))]} />
-        <Select label="기법" hideLabel className="min-w-0" value={method} onChange={setMethod} options={[{ value: '', label: '기법 전체' }, ...(Object.keys(METHOD_SHORT) as MethodId[]).map((m) => ({ value: m, label: METHOD_SHORT[m] }))]} />
-        <Select label="잔" hideLabel value={glass} onChange={setGlass} className="min-w-0" options={[{ value: '', label: '잔 전체' }, ...glasses.map((g) => ({ value: g.id, label: g.nameKo }))]} />
+      <form role="search" onSubmit={(e) => e.preventDefault()} className="mb-4 grid grid-cols-2 items-end gap-2 sm:grid-cols-4">
+        <SearchInput label="이름 검색" placeholder="이름 검색" value={q} onChange={setQ} className="col-span-2 sm:col-span-1" />
+        <Field caption="기주">
+          <Select label="기주" hideLabel className="min-w-0" value={base} onChange={setBase} options={[{ value: '', label: '전체' }, ...bases.map((b) => ({ value: b, label: BASE_LABEL[b] }))]} />
+        </Field>
+        <Field caption="기법">
+          <Select label="기법" hideLabel className="min-w-0" value={method} onChange={setMethod} options={[{ value: '', label: '전체' }, ...(Object.keys(METHOD_SHORT) as MethodId[]).map((m) => ({ value: m, label: METHOD_SHORT[m] }))]} />
+        </Field>
+        <Field caption="잔" className="col-span-2 sm:col-span-1">
+          <Select label="잔" hideLabel className="min-w-0" value={glass} onChange={setGlass} options={[{ value: '', label: '전체' }, ...glasses.map((g) => ({ value: g.id, label: g.nameKo }))]} />
+        </Field>
       </form>
       <p className="mb-3 font-pixel text-sm text-ink-soft" aria-live="polite">{list.length}종</p>
       {list.length === 0 ? (
