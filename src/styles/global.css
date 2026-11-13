@@ -6,6 +6,84 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    accent-color: var(--color-ink);
+    /* 스크롤바: 얇게, 잉크 thumb, 투명 track (Firefox·Chrome 121+) */
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-ink) transparent;
+  }
+  /* 게임(어두운 바) 안에서는 잉크 thumb 이 묻히므로 밝은 조명색 */
+  .bg-bar-night {
+    scrollbar-color: var(--color-bar-glow) transparent;
+  }
+  /* Safari 등 WebKit 구버전 */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-ink);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::selection {
+    background-color: var(--color-butter);
+    color: var(--color-ink);
+  }
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  summary,
+  label:has(> input:not(:disabled)) {
+    cursor: pointer;
+  }
+  /* 기본 모양 숨김: details 삼각형, 검색창 지우기·돋보기, 숫자 스핀 */
+  summary {
+    list-style: none;
+  }
+  summary::-webkit-details-marker,
+  summary::marker {
+    display: none;
+    content: '';
+  }
+  input[type='search'] {
+    appearance: none;
+  }
+  input[type='search']::-webkit-search-cancel-button,
+  input[type='search']::-webkit-search-decoration,
+  input[type='search']::-webkit-search-results-button {
+    appearance: none;
+    display: none;
+  }
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+  ::file-selector-button {
+    margin-right: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 2px solid var(--color-ink);
+    border-radius: var(--radius-pixel);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-pixel);
+    font-size: 0.875rem;
+    box-shadow: var(--shadow-pixel-sm);
+    cursor: pointer;
+  }
+  ::file-selector-button:hover {
+    background: var(--color-butter);
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-ink-soft);
+    opacity: 1;
   }
   body {
     margin: 0;
@@ -35,5 +113,34 @@
       transition-duration: 0.01ms !important;
       animation-duration: 0.01ms !important;
     }
+  }
+}
+
+@layer components {
+  /* 본문 속 링크: <a className="text-link"> */
+  .text-link {
+    color: var(--color-ink);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+    text-decoration-color: var(--color-ink-faint);
+    &:hover {
+      text-decoration-color: var(--color-ink);
+      background-color: var(--color-butter);
+    }
+  }
+  /* PageLoading 도트 */
+  .pixel-blink {
+    animation: pixel-blink 960ms steps(1, end) infinite both;
+  }
+}
+
+@keyframes pixel-blink {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  33% {
+    opacity: 1;
   }
 }

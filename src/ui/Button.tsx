@@ -11,11 +11,11 @@ const VARIANT: Record<Variant, string> = {
 }
 const SIZE: Record<Size, string> = {
   md: 'min-h-11 px-4 text-base',
-  sm: 'min-h-9 px-3 text-sm',
+  sm: 'min-h-11 px-3 text-sm sm:min-h-9',
 }
 
 export function buttonClass(variant: Variant = 'primary', size: Size = 'md', className = '') {
-  return `inline-flex items-center justify-center gap-2 rounded-pixel border-2 font-pixel leading-none select-none transition-transform active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:pointer-events-none disabled:opacity-50 ${VARIANT[variant]} ${SIZE[size]} ${className}`
+  return `inline-flex items-center justify-center gap-2 rounded-pixel border-2 font-pixel leading-none select-none transition-transform active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 ${VARIANT[variant]} ${SIZE[size]} ${className}`
 }
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {

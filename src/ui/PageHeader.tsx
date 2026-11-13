@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { Icon } from './Icon'
 
 type Props = {
   title: string
@@ -14,8 +15,12 @@ export function PageHeader({ title, subtitle, back, actions }: Props) {
   return (
     <header className="mb-6">
       {back && (
-        <Link to={back.to} className="mb-2 inline-block text-sm text-ink-soft underline-offset-4 hover:underline">
-          ‹ {back.label}
+        <Link
+          to={back.to}
+          className="-ml-1 mb-2 inline-flex min-h-9 items-center gap-1 rounded-[3px] px-1 text-sm text-ink-soft underline-offset-4 hover:text-ink hover:underline"
+        >
+          <Icon name="chevron-left" />
+          {back.label}
         </Link>
       )}
       <div className="flex flex-wrap items-end justify-between gap-3">

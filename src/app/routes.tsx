@@ -5,6 +5,7 @@ const HomePage = lazy(() => import('../features/home/HomePage'))
 const GamePage = lazy(() => import('../features/game/GamePage'))
 const SettingsPage = lazy(() => import('../features/settings/SettingsPage'))
 const ArtGalleryPage = lazy(() => import('../features/dev/ArtGalleryPage'))
+const UiGalleryPage = lazy(() => import('../features/dev/UiGalleryPage'))
 const WrittenHubPage = lazy(() => import('../features/written/pages/WrittenHubPage'))
 const UnitPage = lazy(() => import('../features/written/pages/UnitPage'))
 const TopicPage = lazy(() => import('../features/written/pages/TopicPage'))
@@ -38,4 +39,5 @@ export const routes: RouteObject[] = [
   { path: '/practical/game', Component: GamePage },
   { path: '/settings', Component: SettingsPage },
   { path: '/dev/art', Component: ArtGalleryPage },
+  { path: '/dev/ui', Component: UiGalleryPage },
 ]
