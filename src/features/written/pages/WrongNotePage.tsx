@@ -4,7 +4,8 @@ import { questionById, units } from '../../../data/written'
 import { useStore } from '../../../lib/store'
 import { QUESTION_TYPE_LABEL, type QuestionType } from '../../../types/written'
 import { Badge, Button, Card, ChipGroup, EmptyState, Icon, PageHeader, Select, StatTile, Tabs } from '../../../ui'
-import { QuestionView, Rich } from '../quiz/QuestionView'
+import { QuestionRow } from '../quiz/QuestionRow'
+import { QuestionView } from '../quiz/QuestionView'
 
 type Tab = 'active' | 'cleared'
 type Sort = 'count' | 'recent'
@@ -140,37 +141,29 @@ export default function WrongNotePage() {
                 const unit = units.find((u) => u.id === q.unitId)
                 const isOpen = open === q.id
                 return (
-                  <li key={q.id} className="border-ink-faint not-first:border-t-2">
-                    <button
-                      type="button"
-                      aria-expanded={isOpen}
-                      aria-controls={`wn-${q.id}`}
-                      onClick={() => setOpen(isOpen ? null : q.id)}
-                      className={`grid w-full grid-cols-[3.5rem_minmax(0,1fr)_auto] items-start gap-3 px-3 py-3 text-left hover:bg-butter focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-ink active:bg-paper-deep sm:px-4 ${isOpen ? 'bg-paper-deep' : ''}`}
-                    >
+                  <QuestionRow
+                    key={q.id}
+                    id={q.id}
+                    stem={q.stem}
+                    open={isOpen}
+                    onToggle={() => setOpen(isOpen ? null : q.id)}
+                    lead={
                       <span className={`flex h-14 flex-col items-center justify-center rounded-pixel border-2 border-ink ${w.cleared ? 'bg-mint' : 'bg-peach'}`}>
                         <span className="font-pixel text-xl leading-none tabular-nums">{w.wrongCount}</span>
                         <span className="mt-1 text-[11px] leading-none">번 틀림</span>
                       </span>
-                      <span className="min-w-0">
-                        <span className="flex items-center gap-2">
-                          <Badge tone="lavender">{QUESTION_TYPE_LABEL[q.type as QuestionType]}</Badge>
-                          <span className="ml-auto truncate text-xs text-ink-soft">
-                            {unit?.title} · {fmtShort(w.lastWrongAt)}
-                          </span>
+                    }
+                    top={
+                      <>
+                        <Badge tone="lavender">{QUESTION_TYPE_LABEL[q.type as QuestionType]}</Badge>
+                        <span className="ml-auto truncate text-xs text-ink-soft">
+                          {unit?.title} · {fmtShort(w.lastWrongAt)}
                         </span>
-                        <span id={`stem-${q.id}`} className={`mt-1.5 block leading-relaxed font-semibold ${isOpen ? '' : 'line-clamp-2'}`}>
-                          <Rich text={q.stem} />
-                        </span>
-                      </span>
-                      <Icon name="chevron-down" className={`mt-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    {isOpen && (
-                      <div id={`wn-${q.id}`} className="border-t-2 border-ink-faint px-3 pt-3 pb-4 sm:pr-4 sm:pl-[5.25rem]">
-                        <QuestionView q={q} no={1} picked={w.lastPicked} reveal bare />
-                      </div>
-                    )}
-                  </li>
+                      </>
+                    }
+                  >
+                    <QuestionView q={q} no={1} picked={w.lastPicked} reveal bare />
+                  </QuestionRow>
                 )
               })}
             </ul>

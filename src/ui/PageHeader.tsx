@@ -23,7 +23,7 @@ export function PageHeader({ title, subtitle, back, actions }: Props) {
           {back.label}
         </Link>
       )}
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <h1 className="font-pixel text-2xl sm:text-3xl">{title}</h1>
           {subtitle && <p className="mt-1 max-w-prose text-ink-soft">{subtitle}</p>}

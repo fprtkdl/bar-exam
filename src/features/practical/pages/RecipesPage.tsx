@@ -42,11 +42,11 @@ export default function RecipesPage() {
           </Button>
         }
       />
-      <form role="search" onSubmit={(e) => e.preventDefault()} className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <SearchInput label="이름 검색" placeholder="이름 검색" value={q} onChange={setQ} className="col-span-2 sm:col-span-1" />
-        <Select label="기주" value={base} onChange={setBase} options={[{ value: '', label: '전체' }, ...bases.map((b) => ({ value: b, label: BASE_LABEL[b] }))]} />
-        <Select label="기법" value={method} onChange={setMethod} options={[{ value: '', label: '전체' }, ...(Object.keys(METHOD_SHORT) as MethodId[]).map((m) => ({ value: m, label: METHOD_SHORT[m] }))]} />
-        <Select label="잔" value={glass} onChange={setGlass} className="col-span-2 sm:col-span-1" options={[{ value: '', label: '전체' }, ...glasses.map((g) => ({ value: g.id, label: g.nameKo }))]} />
+      <form role="search" onSubmit={(e) => e.preventDefault()} className="mb-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
+        <SearchInput label="이름 검색" placeholder="이름 검색" value={q} onChange={setQ} className="col-span-3 sm:col-span-1" />
+        <Select label="기주" hideLabel className="min-w-0" value={base} onChange={setBase} options={[{ value: '', label: '기주 전체' }, ...bases.map((b) => ({ value: b, label: BASE_LABEL[b] }))]} />
+        <Select label="기법" hideLabel className="min-w-0" value={method} onChange={setMethod} options={[{ value: '', label: '기법 전체' }, ...(Object.keys(METHOD_SHORT) as MethodId[]).map((m) => ({ value: m, label: METHOD_SHORT[m] }))]} />
+        <Select label="잔" hideLabel value={glass} onChange={setGlass} className="min-w-0" options={[{ value: '', label: '잔 전체' }, ...glasses.map((g) => ({ value: g.id, label: g.nameKo }))]} />
       </form>
       <p className="mb-3 font-pixel text-sm text-ink-soft" aria-live="polite">{list.length}종</p>
       {list.length === 0 ? (

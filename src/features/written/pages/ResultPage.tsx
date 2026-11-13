@@ -3,8 +3,9 @@ import { useParams } from 'react-router-dom'
 import { questionById, units } from '../../../data/written'
 import { useStore } from '../../../lib/store'
 import { QUESTION_TYPE_LABEL, type QuestionType } from '../../../types/written'
-import { Button, Card, EmptyState, Icon, PageHeader, ProgressBar, StatTile } from '../../../ui'
+import { Badge, Button, Card, EmptyState, Icon, PageHeader, ProgressBar, StatTile } from '../../../ui'
 import { isPass, tally, toScore } from '../quiz/build'
+import { QuestionRow } from '../quiz/QuestionRow'
 import { QuestionView } from '../quiz/QuestionView'
 
 function Bars({ title, rows }: { title: string; rows: { label: string; correct: number; total: number }[] }) {
@@ -30,6 +31,7 @@ export default function ResultPage() {
   const { attemptId } = useParams()
   const attempt = useStore((s) => s.attempts.find((a) => a.id === attemptId))
   const [onlyWrong, setOnlyWrong] = useState(false)
+  const [open, setOpen] = useState<string | null>(null)
 
   if (!attempt) {
     return (
@@ -90,24 +92,40 @@ export default function ResultPage() {
       {shown.length === 0 ? (
         <EmptyState title="틀린 문항이 없어요" description="모두 맞혔습니다." />
       ) : (
-        <ol className="grid gap-4">
+        <ul className="overflow-hidden rounded-pixel border-2 border-ink bg-paper shadow-pixel">
           {shown.map(({ a, no }) => {
             const q = questionById[a.qid]
+            if (!q) {
+              return (
+                <li key={a.qid} className="border-ink-faint px-4 py-3 text-ink-soft not-first:border-t-2">
+                  <span className="font-pixel">{no}.</span> 삭제되었거나 수정된 문항입니다.
+                </li>
+              )
+            }
+            const isOpen = open === a.qid
             return (
-              <li key={a.qid}>
-                <Card>
-                  {q ? (
-                    <QuestionView q={q} no={no} picked={a.picked} reveal />
-                  ) : (
-                    <p className="text-ink-soft">
-                      <span className="font-pixel">{no}.</span> 삭제되었거나 수정된 문항입니다.
-                    </p>
-                  )}
-                </Card>
-              </li>
+              <QuestionRow
+                key={a.qid}
+                id={a.qid}
+                stem={q.stem}
+                open={isOpen}
+                onToggle={() => setOpen(isOpen ? null : a.qid)}
+                lead={
+                  <span className={`flex h-14 flex-col items-center justify-center rounded-pixel border-2 border-ink ${a.correct ? 'bg-mint text-good' : 'bg-peach text-bad'}`}>
+                    <span className="font-pixel text-lg leading-none text-ink tabular-nums">{no}</span>
+                    <span className="mt-1 flex items-center gap-0.5 text-[11px] leading-none">
+                      <Icon name={a.correct ? 'check' : 'x'} size={12} />
+                      {a.correct ? '정답' : '오답'}
+                    </span>
+                  </span>
+                }
+                top={<Badge tone="lavender">{QUESTION_TYPE_LABEL[q.type as QuestionType]}</Badge>}
+              >
+                <QuestionView q={q} no={no} picked={a.picked} reveal bare />
+              </QuestionRow>
             )
           })}
-        </ol>
+        </ul>
       )}
     </>
   )

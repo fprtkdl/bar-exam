@@ -1,14 +1,14 @@
 import { useEffect, useRef } from 'react'
 import type { ChoiceIndex, Question } from '../../../types/written'
 import { QUESTION_TYPE_LABEL } from '../../../types/written'
-import { Badge, Icon } from '../../../ui'
+import { Arrows, Badge, Icon } from '../../../ui'
 
 /** 노트·문항 텍스트의 `**굵게**` 를 해석하고, 문장 속 화살표 문자(→)는 아이콘으로 바꾼다 */
 export function Rich({ text }: { text: string }) {
   return (
     <>
       {text.split(/\*\*(.+?)\*\*/g).map((s, i) => {
-        const parts = s.split('→').flatMap((t, j) => (j ? [<Icon key={`a${j}`} name="arrow-right" size={12} className="mx-0.5 inline align-[-1px]" />, t] : [t]))
+        const parts = <Arrows text={s} />
         return i % 2 ? <strong key={i}>{parts}</strong> : <span key={i}>{parts}</span>
       })}
     </>

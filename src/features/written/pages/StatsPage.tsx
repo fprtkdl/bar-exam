@@ -143,7 +143,21 @@ export default function StatsPage() {
         <StatTile
           label="합격선 대비"
           value={avg === null ? '-' : `${avg - examMeta.passScore >= 0 ? '+' : ''}${avg - examMeta.passScore}점`}
-          hint={avg === null ? `합격선 ${examMeta.passScore}점` : avg >= examMeta.passScore ? '평균 합격권' : '평균이 합격선 아래'}
+          hint={
+            avg === null ? (
+              `합격선 ${examMeta.passScore}점`
+            ) : avg >= examMeta.passScore ? (
+              <>
+                <Icon name="check" size={12} />
+                평균 합격권
+              </>
+            ) : (
+              <>
+                <Icon name="x" size={12} />
+                평균이 합격선 아래
+              </>
+            )
+          }
           tone={avg === null ? 'paper' : avg >= examMeta.passScore ? 'good' : 'bad'}
         />
       </div>

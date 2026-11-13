@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { BottleArt, GarnishArt, GlassArt, IceArt, ToolArt } from '../../../art'
 import { guideCategories } from '../../../data/practical/guide'
 import type { GuideEntry } from '../../../types/practical'
-import { Badge, Card, ChipGroup, EmptyState, Icon, PageHeader, Select } from '../../../ui'
+import { Arrows, Badge, Card, ChipGroup, EmptyState, Icon, PageHeader, Select } from '../../../ui'
 import type { IceType } from '../../../types/practical'
 
 function EntryArt({ art }: { art: NonNullable<GuideEntry['art']> }) {
@@ -68,23 +68,23 @@ export default function GuidePage() {
                 <h2 className="font-pixel text-lg leading-tight">{e.nameKo}</h2>
                 <p className="text-sm text-ink-soft">{e.nameEn}</p>
                 <div className="mt-1"><Badge tone="lavender">{e.group}</Badge></div>
-                <p className="mt-2">{e.summary}</p>
+                <p className="mt-2"><Arrows text={e.summary} /></p>
                 {e.features.length > 0 && (
                   <>
                     <p className={CAPTION}>특징</p>
-                    <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">{e.features.map((f, i) => <li key={i}>{f}</li>)}</ul>
+                    <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">{e.features.map((f, i) => <li key={i}><Arrows text={f} /></li>)}</ul>
                   </>
                 )}
                 {e.usage.length > 0 && (
                   <>
                     <p className={CAPTION}>사용법</p>
-                    <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">{e.usage.map((f, i) => <li key={i}>{f}</li>)}</ul>
+                    <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">{e.usage.map((f, i) => <li key={i}><Arrows text={f} /></li>)}</ul>
                   </>
                 )}
                 {e.examTip && (
                   <div className="mt-4 flex gap-2 rounded-pixel border-2 border-ink bg-butter p-3 text-sm">
                     <Icon name="tip" className="mt-0.5 shrink-0" />
-                    <p><b className="font-pixel font-normal">시험 팁</b> {e.examTip}</p>
+                    <p><b className="font-pixel font-normal">시험 팁</b> <Arrows text={e.examTip} /></p>
                   </div>
                 )}
               </div>

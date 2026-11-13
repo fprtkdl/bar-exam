@@ -3,7 +3,7 @@ import { CocktailArt } from '../../../art'
 import { garnishById, glassById, ingredientById, recipeById, recipes } from '../../../data/practical'
 import { useStore } from '../../../lib/store'
 import { METHOD_LABEL } from '../../../types/practical'
-import { Button, Card, EmptyState, Icon, PageHeader } from '../../../ui'
+import { Arrows, Button, Card, EmptyState, Icon, PageHeader } from '../../../ui'
 import { TONE_BG } from '../../../ui/tone'
 import { BASE_LABEL, BASE_TONE } from '../lib/labels'
 import { buildSteps, fmtAmount } from '../lib/steps'
@@ -85,7 +85,7 @@ export default function RecipeDetailPage() {
           </Card>
           <Card tone="butter">
             <h2 className="mb-1 font-pixel text-lg">암기 팁</h2>
-            <p>{r.tip}</p>
+            <p><Arrows text={r.tip} /></p>
           </Card>
           <Card>
             <h2 className="mb-1 font-pixel text-lg">내 게임 기록</h2>
